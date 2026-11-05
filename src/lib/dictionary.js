@@ -19,6 +19,7 @@ export const dictionary = {
       assigned_time: 'Waktu Penugasan',
       branch: 'Cabang',
       bulk: 'Massal',
+      capacity: 'Kapasitas',
       click_for_detail: 'Klik untuk detail',
       click_for_detail_param: 'Klik {parameter} untuk detail',
       close_time: 'Waktu Tutup',
@@ -29,6 +30,7 @@ export const dictionary = {
       created_by: 'Dibuat oleh',
       created_from: 'Dibuat dari',
       created_time: 'Dibuat pada',
+      customer: 'Pelanggan',
       customer_id: 'ID Pelanggan',
       customer_name: 'Nama Pelanggan',
       dark_mode: 'Mode Gelap',
@@ -42,6 +44,7 @@ export const dictionary = {
       download: 'Unduh',
       driver: 'Sopir',
       driver_location: 'Lokasi Sopir',
+      dropped_task: 'Tugas Tidak Terbawa',
       duration: 'Durasi',
       estimate: 'Perkiraan',
       eta: 'ETA',
@@ -704,10 +707,6 @@ export const dictionary = {
           sync_title: 'Sinkronisasi Master Data',
           subtitle: 'Penyelarasan data master tiap cabang dengan server MileApp',
           title: 'Sinkronisasi',
-          modal: {
-            title: 'Detail Data Hasil Routing',
-            subtitle: 'Informasi data routing dan jumlah tugas pada tanggal pengiriman',
-          },
         },
         button: {
           btn_sync: 'Sinkronisasi',
@@ -782,6 +781,7 @@ export const dictionary = {
       assigned_time: 'Assigned Time',
       branch: 'Branch',
       bulk: 'Bulk',
+      capacity: 'Capacity',
       click_for_detail: 'Click for details',
       click_for_detail_param: 'Click {parameter} for details',
       close_time: 'Close Time',
@@ -792,6 +792,7 @@ export const dictionary = {
       created_by: 'Created By',
       created_from: 'Created From',
       created_time: 'Created Time',
+      customer: 'Customer',
       customer_id: 'Customer ID',
       customer_name: 'Customer Name',
       dark_mode: 'Dark Mode',
@@ -805,6 +806,7 @@ export const dictionary = {
       download: 'Download',
       driver: 'Driver',
       driver_location: 'Driver Location',
+      dropped_task: 'Dropped Task',
       duration: 'Duration',
       estimate: 'Estimate',
       eta: 'ETA',
@@ -902,7 +904,7 @@ export const dictionary = {
         delete_title: 'Delete {text}',
         reset_message: 'Are you sure to reset {text}?',
         reset_title: 'Reset {text}',
-        vehicle_subtitle: 'Complete these vehicle information!'
+        vehicle_subtitle: 'Complete these vehicle information!',
       },
     },
     home: {
@@ -1465,10 +1467,6 @@ export const dictionary = {
           sync_title: 'Master Data Synchronization',
           subtitle: 'Master data alignment for each branch with the MileApp server',
           title: 'Synchronize',
-          modal: {
-            title: 'Routing Result Details',
-            subtitle: 'Routing data information and task count for the delivery date',
-          },
         },
         button: {
           btn_sync: 'Synchronize',

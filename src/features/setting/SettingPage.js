@@ -19,11 +19,13 @@ import { useCallback, useEffect, useState, useMemo } from 'react';
 import GeneralTab from './tabs/GeneralTab';
 import PermissionTab from './tabs/PermissionTab';
 import SyncDataTab from './tabs/SyncDataTab';
+import DataDetailTab from './tabs/DataDetailTab';
 
 export default function SettingPage() {
   const [isAuthorized, setIsAuthorized] = useState(false);
   const [isLoadingPage, setIsLoadingPage] = useState(true);
   const [activeTab, setActiveTab] = useState('general');
+  const [detailConfig, setDetailConfig] = useState(null);
   const [lastUpdated, setLastUpdated] = useState({
     hubs: '-',
     roles: '-',
@@ -41,7 +43,7 @@ export default function SettingPage() {
   const [reasons, setReasons] = useState([]);
   const [rolesList, setRolesList] = useState([]);
 
-  const { t } = useLanguage();
+  const { t, localeCode } = useLanguage();
   const { isSuperadmin, isChecking } = useSuperadmin();
 
   const isSecretMode = typeof window !== 'undefined' && window.SECRET_MODE_ACTIVE === true;
@@ -53,8 +55,17 @@ export default function SettingPage() {
       { tab: 'general', label: t('setting.tab.general.title') },
       ...(isSuperadmin ? [{ tab: 'permission', label: t('setting.tab.permission.title') }] : []),
       { tab: 'sync', label: t('setting.tab.sync_data.title') },
+      ...(detailConfig
+        ? [
+            {
+              tab: 'detail',
+              label: 'Database',
+              isClosable: true,
+            },
+          ]
+        : []),
     ],
-    [isSuperadmin, t]
+    [isSuperadmin, t, detailConfig]
   );
 
   const fetchAllData = useCallback(async () => {
@@ -192,6 +203,24 @@ export default function SettingPage() {
             onRefresh={fetchAllData}
             isReadOnly={isReadOnlySync}
             translate={t}
+            onOpenDetailTab={(config) => {
+              setDetailConfig(config);
+              setActiveTab('detail');
+            }}
+          />
+        );
+      case 'detail':
+        return (
+          <DataDetailTab
+            hubId={detailConfig?.hubId}
+            hubName={detailConfig?.hubName}
+            dateRange={detailConfig?.dateRange}
+            onClose={() => {
+              setDetailConfig(null);
+              setActiveTab('sync');
+            }}
+            translate={t}
+            localeCode={localeCode}
           />
         );
       default:
@@ -213,7 +242,22 @@ export default function SettingPage() {
             isActive={activeTab === data.tab}
             onClick={() => setActiveTab(data.tab)}
           >
-            {data.label}
+            <span>{data.label}</span>
+            {data.isClosable && (
+              <span
+                role="button"
+                tabIndex={0}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setDetailConfig(null);
+                  setActiveTab('sync');
+                }}
+                className="ml-1 px-1 py-0.5 rounded-full hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 text-xs cursor-pointer"
+                title={t('common.close') || 'Tutup'}
+              >
+                ✕
+              </span>
+            )}
           </TabButton>
         ))}
       </div>

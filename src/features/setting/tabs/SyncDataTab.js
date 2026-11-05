@@ -22,7 +22,6 @@ import { toastError, toastSuccess, toastWarning } from '@/lib/toast';
 import { formatDateUniversal } from '@/lib/utils';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import Card from '../components/Card';
-import RoutingDetailModal from '../components/RoutingDetailModal';
 import SyncModal from '../components/SyncModal';
 
 const isSameMismatch = (a, b) =>
@@ -59,6 +58,7 @@ export default function SyncDataTab({
   onRefresh,
   isReadOnly,
   translate,
+  onOpenDetailTab,
 }) {
   const [syncLoading, setSyncLoading] = useState(null);
   const [modalOpen, setModalOpen] = useState(false);
@@ -71,7 +71,6 @@ export default function SyncDataTab({
     const today = new Date();
     return [today, today];
   });
-  const [isRoutingDetailOpen, setIsRoutingDetailOpen] = useState(false);
   const [confirmModalConfig, setConfirmModalConfig] = useState({
     isOpen: false,
     title: '',
@@ -507,8 +506,16 @@ export default function SyncDataTab({
     },
     {
       id: 'detail',
-      label: translate('setting.tab.sync_data.modal.title'),
-      onClick: () => setIsRoutingDetailOpen(true),
+      label: 'Database',
+      onClick: () => {
+        if (typeof onOpenDetailTab === 'function') {
+          onOpenDetailTab({
+            hubId: activeHubId,
+            hubName: storedLocationName,
+            dateRange: routingDateRange,
+          });
+        }
+      },
       disabled: !hasCompleteRoutingRange,
     },
   ];
@@ -676,15 +683,6 @@ export default function SyncDataTab({
         mcEasyDrivers={mcEasyDrivers}
         isDriverLoading={isDriverLoading}
         isSaving={syncLoading === 'drivers-active' || syncLoading === 'drivers-global'}
-        translate={translate}
-      />
-
-      <RoutingDetailModal
-        isOpen={isRoutingDetailOpen}
-        onClose={() => setIsRoutingDetailOpen(false)}
-        hubId={activeHubId}
-        hubName={storedLocationName}
-        dateRange={routingDateRange}
         translate={translate}
       />
 

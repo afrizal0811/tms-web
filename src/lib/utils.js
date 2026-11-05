@@ -107,6 +107,18 @@ export function formatMinutesToHHMM(totalMinutes, second = false) {
   return `${formattedHours}:${formattedMinutes}`;
 }
 
+export function formatDurationHHMMSS(totalMinutes) {
+  if (totalMinutes == null || totalMinutes === '') return '-';
+  if (typeof totalMinutes === 'string' && totalMinutes.includes(':')) {
+    const parts = totalMinutes.split(':');
+    if (parts.length === 2) {
+      return `${parts[0].padStart(2, '0')}:${parts[1].padStart(2, '0')}:00`;
+    }
+    return totalMinutes;
+  }
+  return formatMinutesToHHMM(Number(totalMinutes), true);
+}
+
 // Menghitung selisih waktu dalam satuan menit antara dua timestamp
 export function calculateMinuteDifference(time1, time2) {
   if (!time1 || !time2) return null;
