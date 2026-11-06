@@ -19,7 +19,7 @@ import { useCallback, useEffect, useState, useMemo } from 'react';
 import GeneralTab from './tabs/GeneralTab';
 import PermissionTab from './tabs/PermissionTab';
 import SyncDataTab from './tabs/SyncDataTab';
-import DataDetailTab from './tabs/DataDetailTab';
+import DatabaseTab from './tabs/DatabaseTab';
 
 export default function SettingPage() {
   const [isAuthorized, setIsAuthorized] = useState(false);
@@ -43,7 +43,7 @@ export default function SettingPage() {
   const [reasons, setReasons] = useState([]);
   const [rolesList, setRolesList] = useState([]);
 
-  const { t, localeCode } = useLanguage();
+  const { t } = useLanguage();
   const { isSuperadmin, isChecking } = useSuperadmin();
 
   const isSecretMode = typeof window !== 'undefined' && window.SECRET_MODE_ACTIVE === true;
@@ -211,7 +211,7 @@ export default function SettingPage() {
         );
       case 'detail':
         return (
-          <DataDetailTab
+          <DatabaseTab
             hubId={detailConfig?.hubId}
             hubName={detailConfig?.hubName}
             dateRange={detailConfig?.dateRange}
@@ -220,7 +220,6 @@ export default function SettingPage() {
               setActiveTab('sync');
             }}
             translate={t}
-            localeCode={localeCode}
           />
         );
       default:
@@ -229,7 +228,7 @@ export default function SettingPage() {
   };
 
   return (
-    <div className="mx-auto px-4 sm:px-6 py-2 pb-12 w-full h-full flex flex-col grow">
+    <div className="mx-auto px-4 sm:px-6 py-2 pb-3 w-full h-full flex flex-col grow">
       <div className="mb-2">
         <h1 className="text-3xl font-bold text-gray-900 dark:text-slate-100">
           {t('setting.title')}

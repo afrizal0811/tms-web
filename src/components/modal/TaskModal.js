@@ -354,7 +354,7 @@ function TaskOverview({ taskData, translate }) {
   );
 }
 
-function DataTab({ taskData, pendingDetail, goToMapTab, translate, isIndonesian }) {
+function DataTab({ taskData, pendingDetail, goToMapTab, translate }) {
   let arrivalSource, departureSource;
   const isGrOrPickup =
     taskData.flow?.toUpperCase().includes('GR') || taskData.flow?.toUpperCase().includes('PICKUP');
@@ -881,7 +881,6 @@ export default function TaskModal({ isOpen, onClose, taskId, isAllHub = false })
                 pendingDetail={pendingDetail}
                 goToMapTab={goToMapTab}
                 translate={translate}
-                isIndonesian={isIndonesian}
               />
             )}
             {activeTab === translate('common.routing') && (

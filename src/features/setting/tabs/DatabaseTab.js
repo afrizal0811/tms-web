@@ -2,6 +2,7 @@
 
 import Button from '@/components/button/Button';
 import HighlightText from '@/components/HighlightText';
+import InformationButton from '@/components/button/InformationButton';
 import SearchBar from '@/components/SearchBar';
 import TableData from '@/components/table/TableData';
 import Card from '../components/Card';
@@ -12,20 +13,25 @@ import { toastError, toastSuccess } from '@/lib/toast';
 import {
   formatDateUniversal,
   formatDurationHHMMSS,
-  formatLongDate,
   getBasePlate,
   parseCustomerString,
 } from '@/lib/utils';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { downloadDateRangeZip, downloadSingleDateExcel } from '../helper/dataDetail';
 
-export default function DataDetailTab({
-  hubId,
-  hubName = '',
-  dateRange = [],
-  translate,
-  localeCode,
-}) {
+function UserAuditCell({ user, timestamp, highlight }) {
+  const dateStr = timestamp ? formatDateUniversal(timestamp, 'DD-MM-YYYY HH:mm:ss') : '-';
+  return (
+    <div className="flex flex-col text-left">
+      <span className="text-xs font-medium text-slate-800 dark:text-slate-200">
+        <HighlightText text={user || '-'} highlight={highlight} />
+      </span>
+      <span className="text-[11px] text-slate-400 dark:text-slate-500">{dateStr}</span>
+    </div>
+  );
+}
+
+export default function DatabaseTab({ hubId, hubName = '', dateRange = [], translate }) {
   const { formatStatus, getStatusClass } = useDeliveryStatus();
 
   const datesList = useMemo(() => {
@@ -62,12 +68,6 @@ export default function DataDetailTab({
     const { storedLocationAcronym, storedLocationName } = getLocalStorage();
     return storedLocationAcronym || hubName || storedLocationName || '';
   }, [hubName]);
-
-  const subtitleText = useMemo(() => {
-    if (datesList.length === 0) return '-';
-    if (datesList.length === 1) return formatLongDate(datesList[0], localeCode);
-    return `${formatLongDate(datesList[0], localeCode)} - ${formatLongDate(datesList[datesList.length - 1], localeCode)}`;
-  }, [datesList, localeCode]);
 
   const fetchDateData = useCallback(
     async (dateStr) => {
@@ -235,36 +235,27 @@ export default function DataDetailTab({
         width: 'w-[19%]',
         render: (row) => {
           const ru = row.route_user || row.routeUser;
-          const su = row.sync_user || row.syncUser;
-          const user = ru?.created_by || row.createdBy || su?.created_by || '-';
-          const rawDate = ru?.created_at || row.createdAt || su?.created_at;
-          const dateStr = rawDate ? formatDateUniversal(rawDate, 'DD-MM-YYYY HH:mm:ss') : '-';
           return (
-            <div className="flex flex-col text-left">
-              <span className="text-xs font-medium text-slate-800 dark:text-slate-200">
-                <HighlightText text={user} highlight={searchQuery} />
-              </span>
-              <span className="text-[11px] text-slate-400 dark:text-slate-500">{dateStr}</span>
-            </div>
+            <UserAuditCell
+              user={ru?.created_by || row.createdBy}
+              timestamp={ru?.created_at || row.createdAt}
+              highlight={searchQuery}
+            />
           );
         },
       },
       {
-        label: translate('common.updated_by'),
-        key: 'updatedBy',
+        label: translate('common.sync_by'),
+        key: 'syncBy',
         width: 'w-[19%]',
         render: (row) => {
           const su = row.sync_user || row.syncUser;
-          const user = su?.updated_by || row.updatedBy || '-';
-          const rawDate = su?.updated_at || row.updatedAt;
-          const dateStr = rawDate ? formatDateUniversal(rawDate, 'DD-MM-YYYY HH:mm:ss') : '-';
           return (
-            <div className="flex flex-col text-left">
-              <span className="text-xs font-medium text-slate-800 dark:text-slate-200">
-                <HighlightText text={user} highlight={searchQuery} />
-              </span>
-              <span className="text-[11px] text-slate-400 dark:text-slate-500">{dateStr}</span>
-            </div>
+            <UserAuditCell
+              user={su?.updated_by || su?.created_by || row.updatedBy}
+              timestamp={su?.updated_at || su?.created_at || row.updatedAt}
+              highlight={searchQuery}
+            />
           );
         },
       },
@@ -373,40 +364,45 @@ export default function DataDetailTab({
       {
         label: translate('common.created_by') || 'Dibuat Oleh',
         key: 'createdBy',
-        width: 'w-[11%]',
+        width: 'w-[9%]',
         render: (row) => {
           const tu = row.task_user || row.taskUser;
-          const su = row.sync_user || row.syncUser;
-          const user = tu?.created_by || row.createdBy || su?.created_by || '-';
-          const rawDate = tu?.created_at || row.createdAt || su?.created_at;
-          const dateStr = rawDate ? formatDateUniversal(rawDate, 'DD-MM-YYYY HH:mm:ss') : '-';
           return (
-            <div className="flex flex-col text-left">
-              <span className="text-xs font-medium text-slate-800 dark:text-slate-200">
-                <HighlightText text={user} highlight={searchQuery} />
-              </span>
-              <span className="text-[11px] text-slate-400 dark:text-slate-500">{dateStr}</span>
-            </div>
+            <UserAuditCell
+              user={tu?.created_by || row.createdBy}
+              timestamp={tu?.created_at || row.createdAt}
+              highlight={searchQuery}
+            />
           );
         },
       },
       {
         label: translate('common.updated_by') || 'Diperbarui Oleh',
         key: 'updatedBy',
-        width: 'w-[11%]',
+        width: 'w-[9%]',
+        render: (row) => {
+          const tu = row.task_user || row.taskUser;
+          return (
+            <UserAuditCell
+              user={tu?.updated_by || row.updatedBy}
+              timestamp={tu?.updated_at || row.updatedAt}
+              highlight={searchQuery}
+            />
+          );
+        },
+      },
+      {
+        label: translate('common.sync_by'),
+        key: 'syncBy',
+        width: 'w-[9%]',
         render: (row) => {
           const su = row.sync_user || row.syncUser;
-          const tu = row.task_user || row.taskUser;
-          const user = su?.updated_by || row.updatedBy || tu?.updated_by || '-';
-          const rawDate = su?.updated_at || row.updatedAt || tu?.updated_at;
-          const dateStr = rawDate ? formatDateUniversal(rawDate, 'DD-MM-YYYY HH:mm:ss') : '-';
           return (
-            <div className="flex flex-col text-left">
-              <span className="text-xs font-medium text-slate-800 dark:text-slate-200">
-                <HighlightText text={user} highlight={searchQuery} />
-              </span>
-              <span className="text-[11px] text-slate-400 dark:text-slate-500">{dateStr}</span>
-            </div>
+            <UserAuditCell
+              user={su?.updated_by || su?.created_by}
+              timestamp={su?.updated_at || su?.created_at}
+              highlight={searchQuery}
+            />
           );
         },
       },
@@ -516,21 +512,17 @@ export default function DataDetailTab({
         },
       },
       {
-        label: translate('common.updated_by') || 'Diperbarui Oleh',
-        key: 'updatedBy',
+        label: translate('common.sync_by'),
+        key: 'syncBy',
         width: 'w-[16%]',
         render: (row) => {
           const su = row.sync_user || row.syncUser;
-          const user = su?.updated_by || row.updatedBy || '-';
-          const rawDate = su?.updated_at || row.updatedAt;
-          const dateStr = rawDate ? formatDateUniversal(rawDate, 'DD-MM-YYYY HH:mm:ss') : '-';
           return (
-            <div className="flex flex-col text-left">
-              <span className="text-xs font-medium text-slate-800 dark:text-slate-200">
-                <HighlightText text={user} highlight={searchQuery} />
-              </span>
-              <span className="text-[11px] text-slate-400 dark:text-slate-500">{dateStr}</span>
-            </div>
+            <UserAuditCell
+              user={su?.updated_by || su?.created_by || row.updatedBy}
+              timestamp={su?.updated_at || su?.created_at || row.updatedAt}
+              highlight={searchQuery}
+            />
           );
         },
       },
@@ -583,7 +575,41 @@ export default function DataDetailTab({
       label: translate('common.driver_location'),
       count: currentData.locations.length,
     },
-    { key: 'kpi', label: 'KPI', count: currentData.kpi ? '✓' : '0' },
+    {
+      key: 'kpi',
+      label: (
+        <span className="inline-flex items-center gap-1.5">
+          <span>KPI</span>
+          {Boolean(
+            currentData.kpi && (currentData.kpi.created_by || currentData.kpi.updated_by)
+          ) && (
+            <InformationButton
+              infoText={
+                <div className="flex flex-col gap-1 text-left min-w-[190px]">
+                  <div>
+                    <span className="text-slate-400 font-semibold">
+                      {translate('common.created_by')}:{' '}
+                    </span>
+                    <span className="font-medium text-white">
+                      {`${currentData.kpi.created_by || '-'} (${formatDateUniversal(currentData.kpi.created_time, 'DD/MM/YY HH:mm:ss')})`}
+                    </span>
+                  </div>
+                  <div>
+                    <span className="text-slate-400 font-semibold">
+                      {translate('common.updated_by')}:{' '}
+                    </span>
+                    <span className="font-medium text-white">
+                      {`${currentData.kpi.updated_by || '-'} (${formatDateUniversal(currentData.kpi.updated_time, 'DD/MM/YY HH:mm:ss')})`}
+                    </span>
+                  </div>
+                </div>
+              }
+              size="3.5"
+            />
+          )}
+        </span>
+      ),
+    },
   ];
 
   const renderKpiCards = () => {
@@ -637,7 +663,7 @@ export default function DataDetailTab({
             val: kpi.act_hour_dry ?? 0,
           },
           {
-            label: `${translate('common.estimte')} (Frozen)`,
+            label: `${translate('common.estimate')} (Frozen)`,
             val: kpi.est_hour_frz ?? 0,
           },
           {
@@ -691,41 +717,43 @@ export default function DataDetailTab({
     ];
 
     return (
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {groups.map((g) => (
-          <div
-            key={g.title}
-            className="p-4 rounded-xl border border-gray-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-900/50 flex flex-col gap-2.5 shadow-xs overflow-hidden"
-          >
-            <div className="flex items-center justify-between border-b border-gray-200 dark:border-slate-800 pb-2">
-              <span className="text-xs font-bold uppercase tracking-wider text-slate-800 dark:text-slate-200 truncate">
-                {g.title}
-              </span>
-            </div>
-            <div className="flex flex-col gap-1">
-              {g.items.map((it) => (
-                <div
-                  key={it.label}
-                  className="flex items-baseline text-xs py-1 px-1.5 rounded hover:bg-white dark:hover:bg-slate-800/60 transition-colors w-full min-w-0"
-                >
-                  <span className="text-slate-600 dark:text-slate-400 shrink-0 truncate max-w-[65%]">
-                    {it.label}
-                  </span>
-                  <span className="flex-1 mx-2 border-b border-dotted border-gray-300 dark:border-slate-700 min-w-2"></span>
-                  <span
-                    className={`shrink-0 font-semibold text-right tabular-nums ${
-                      it.bold
-                        ? 'text-sky-600 dark:text-sky-400 font-bold'
-                        : 'text-slate-800 dark:text-slate-200'
-                    }`}
+      <div className="flex-1 overflow-y-auto pr-1">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {groups.map((g) => (
+            <div
+              key={g.title}
+              className="p-4 rounded-xl border border-gray-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-900/50 flex flex-col gap-2.5 shadow-xs overflow-hidden"
+            >
+              <div className="flex items-center justify-between border-b border-gray-200 dark:border-slate-800 pb-2">
+                <span className="text-xs font-bold uppercase tracking-wider text-slate-800 dark:text-slate-200 truncate">
+                  {g.title}
+                </span>
+              </div>
+              <div className="flex flex-col gap-1">
+                {g.items.map((it) => (
+                  <div
+                    key={it.label}
+                    className="flex items-baseline text-xs py-1 px-1.5 rounded hover:bg-white dark:hover:bg-slate-800/60 transition-colors w-full min-w-0"
                   >
-                    {it.val}
-                  </span>
-                </div>
-              ))}
+                    <span className="text-slate-600 dark:text-slate-400 shrink-0 truncate max-w-[65%]">
+                      {it.label}
+                    </span>
+                    <span className="flex-1 mx-2 border-b border-dotted border-gray-300 dark:border-slate-700 min-w-2"></span>
+                    <span
+                      className={`shrink-0 font-semibold text-right tabular-nums ${
+                        it.bold
+                          ? 'text-sky-600 dark:text-sky-400 font-bold'
+                          : 'text-slate-800 dark:text-slate-200'
+                      }`}
+                    >
+                      {it.val}
+                    </span>
+                  </div>
+                ))}
+              </div>
             </div>
-          </div>
-        ))}
+          ))}
+        </div>
       </div>
     );
   };
@@ -768,23 +796,70 @@ export default function DataDetailTab({
 
   return (
     <div className="w-full flex flex-col h-full gap-4">
-      <Card className="grow flex flex-col">
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center pb-4 border-b border-gray-200 dark:border-slate-800 gap-3">
-          <div>
-            <h2 className="text-lg font-bold text-gray-900 dark:text-slate-100">
-              Database{' '}
-              {datesList.length > 1 ? ` - ${formatLongDate(selectedDate, localeCode)}` : ''}
-            </h2>
-            <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">{subtitleText}</p>
-          </div>
+      <Card className="flex flex-col min-h-[620px] max-h-[620px] p-0!">
+        <div className="flex flex-col md:flex-row justify-between items-stretch md:items-center gap-3 p-4 border-b border-gray-100 dark:border-slate-800">
+          <div className="flex flex-wrap items-center gap-3">
+            <div className="flex items-center gap-2 overflow-x-auto p-1 bg-slate-100 dark:bg-slate-800/80 rounded-lg border border-gray-200 dark:border-slate-700 max-w-full">
+              {subTabs.map((st) => (
+                <button
+                  key={st.key}
+                  type="button"
+                  onClick={() => setActiveSubTab(st.key)}
+                  className={`inline-flex items-center justify-center h-8 px-3 rounded-md text-xs font-semibold whitespace-nowrap transition-colors cursor-pointer shrink-0 leading-none ${
+                    activeSubTab === st.key
+                      ? 'bg-white dark:bg-slate-900 text-sky-600 dark:text-sky-400 shadow-sm'
+                      : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
+                  }`}
+                >
+                  {st.label} {st.count ? `(${st.count})` : ''}
+                </button>
+              ))}
+            </div>
+            {datesList.length > 1 && (
+              <div className="flex items-center gap-2 h-10 px-2 bg-slate-100 dark:bg-slate-800/80 rounded-lg border border-gray-200 dark:border-slate-700">
+                <button
+                  type="button"
+                  onClick={() => setCurrentDateIndex((prev) => Math.max(0, prev - 1))}
+                  disabled={currentDateIndex === 0}
+                  className="inline-flex items-center justify-center h-7 px-2 text-xs font-bold rounded border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 disabled:opacity-40 disabled:cursor-not-allowed hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors cursor-pointer"
+                >
+                  &lt;
+                </button>
 
-          <div className="flex items-center gap-2">
+                <span className="text-xs font-semibold text-slate-700 dark:text-slate-200 px-1 whitespace-nowrap">
+                  {formatDateUniversal(selectedDate, 'DD/MM/YY')}
+                </span>
+
+                <button
+                  type="button"
+                  onClick={() =>
+                    setCurrentDateIndex((prev) => Math.min(datesList.length - 1, prev + 1))
+                  }
+                  disabled={currentDateIndex >= datesList.length - 1}
+                  className="inline-flex items-center justify-center h-7 px-2 text-xs font-bold rounded border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 disabled:opacity-40 disabled:cursor-not-allowed hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors cursor-pointer"
+                >
+                  &gt;
+                </button>
+              </div>
+            )}
+          </div>
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+            {activeSubTab !== 'kpi' && (
+              <div className="w-full ">
+                <SearchBar
+                  value={searchQuery}
+                  onChange={setSearchQuery}
+                  placeholder={translate('common.search')}
+                  size="sm"
+                />
+              </div>
+            )}
             <Button
               type={datesList.length > 1 ? 'split' : 'button'}
               onClick={handleExportZip}
               isLoading={isExporting}
               disabled={isExporting || hasNoData}
-              width="w-auto"
+              width="w-full sm:w-auto"
               size="sm"
               text={translate('common.download')}
               options={[
@@ -799,68 +874,7 @@ export default function DataDetailTab({
           </div>
         </div>
 
-        {datesList.length > 1 && (
-          <div className="flex items-center gap-3 py-2 px-3 bg-slate-50 dark:bg-slate-800/60 rounded-lg my-3 border border-gray-200 dark:border-slate-700 w-fit">
-            <button
-              type="button"
-              onClick={() => setCurrentDateIndex((prev) => Math.max(0, prev - 1))}
-              disabled={currentDateIndex === 0}
-              className="px-2.5 py-1 text-xs font-bold rounded border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 disabled:opacity-40 disabled:cursor-not-allowed hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors cursor-pointer"
-            >
-              &lt;
-            </button>
-
-            <span className="text-xs font-semibold text-slate-700 dark:text-slate-200">
-              {currentDateIndex + 1} / {datesList.length}
-            </span>
-
-            <button
-              type="button"
-              onClick={() =>
-                setCurrentDateIndex((prev) => Math.min(datesList.length - 1, prev + 1))
-              }
-              disabled={currentDateIndex >= datesList.length - 1}
-              className="px-2.5 py-1 text-xs font-bold rounded border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 disabled:opacity-40 disabled:cursor-not-allowed hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors cursor-pointer"
-            >
-              &gt;
-            </button>
-          </div>
-        )}
-
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-4 mt-2">
-          <div className="flex gap-2 overflow-x-auto p-1 bg-slate-100 dark:bg-slate-800/80 rounded-lg border border-gray-200 dark:border-slate-700">
-            {subTabs.map((st) => (
-              <button
-                key={st.key}
-                type="button"
-                onClick={() => setActiveSubTab(st.key)}
-                className={`px-3 py-1.5 rounded-md text-xs font-semibold whitespace-nowrap transition-colors cursor-pointer ${
-                  activeSubTab === st.key
-                    ? 'bg-white dark:bg-slate-900 text-sky-600 dark:text-sky-400 shadow-sm'
-                    : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
-                }`}
-              >
-                {st.label} ({st.count})
-              </button>
-            ))}
-          </div>
-
-          {activeSubTab !== 'kpi' && (
-            <div className="w-full sm:w-64">
-              <SearchBar
-                value={searchQuery}
-                onChange={setSearchQuery}
-                placeholder={translate('common.search')}
-                width="w-full"
-                size="sm"
-              />
-            </div>
-          )}
-        </div>
-
-        <div className="grow overflow-hidden flex flex-col min-h-[350px]">
-          {renderActiveTable()}
-        </div>
+        <div className="flex-1 overflow-hidden flex flex-col min-h-0">{renderActiveTable()}</div>
       </Card>
     </div>
   );
