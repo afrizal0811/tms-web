@@ -3,7 +3,11 @@
 import Tooltip from '@/components/Tooltip';
 import { toastError, toastSuccess } from '@/lib/toast';
 import * as XLSX from 'xlsx-js-style';
-import { formatDeliveryStatus, deliveryTooltip, normalizeDeliveryStatus } from './deliveryStatus';
+import {
+  formatDeliveryStatus,
+  deliveryTooltip,
+  normalizeDeliveryStatus,
+} from '../../../lib/deliveryStatus';
 import {
   formatDateUniversal,
   getBasePlate,
@@ -12,7 +16,7 @@ import {
   normalizeEmail,
   parseCustomerString,
   sortRows,
-} from './utils';
+} from '../../../lib/utils';
 
 export function routingActual({ tasks, drivers, dateStr }) {
   if (!tasks || !drivers) return [];
@@ -198,9 +202,7 @@ export const processRoutingVsActualData = ({ tasks, results, drivers, searchQuer
       const rawHubTimes = result.hubTimes || result.hub_times;
       if (rawHubTimes) {
         const hubTimesData =
-          typeof rawHubTimes === 'string'
-            ? JSON.parse(rawHubTimes)
-            : rawHubTimes;
+          typeof rawHubTimes === 'string' ? JSON.parse(rawHubTimes) : rawHubTimes;
         const hubLongLat =
           result.hub?.lat && result.hub?.lng ? `${result.hub.lat},${result.hub.lng}` : null;
 
@@ -216,8 +218,12 @@ export const processRoutingVsActualData = ({ tasks, results, drivers, searchQuer
           );
 
           const timesObj = {
-            hubETD: firstHub?.etd ? formatDateUniversal(`${date} ${firstHub.etd}`, 'HH:mm') || '-' : '-',
-            hubETA: lastHub?.eta ? formatDateUniversal(`${date} ${lastHub.eta}`, 'HH:mm') || '-' : '-',
+            hubETD: firstHub?.etd
+              ? formatDateUniversal(`${date} ${firstHub.etd}`, 'HH:mm') || '-'
+              : '-',
+            hubETA: lastHub?.eta
+              ? formatDateUniversal(`${date} ${lastHub.eta}`, 'HH:mm') || '-'
+              : '-',
             hubLongLat,
             middleHubs: middleHubs.map((h) => ({
               order: h.order,
@@ -267,12 +273,10 @@ export const processRoutingVsActualData = ({ tasks, results, drivers, searchQuer
     const driverPlat = driverRow.plat;
     const basePlat = getBasePlate(driverPlat);
     const driverTasks = tasksByGroupMap.get(driverRow.gKey) || [];
-    const hubTimes =
-      hubTimesMap.get(driverRow.gKey) ||
+    const hubTimes = hubTimesMap.get(driverRow.gKey) ||
       hubTimesMap.get(basePlat) ||
       hubTimesMap.get(driverPlat) ||
-      hubTimesFallbackMap.get(driverName) ||
-      { hubETD: '-', hubETA: '-', hubLongLat: null };
+      hubTimesFallbackMap.get(driverName) || { hubETD: '-', hubETA: '-', hubLongLat: null };
 
     const isDriverMatch =
       driverName.toLowerCase().includes(query) ||

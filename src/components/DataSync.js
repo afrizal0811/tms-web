@@ -7,6 +7,7 @@ import PendingReasonModal from '@/features/summary/tabs/modals/PendingReasonModa
 import { useLanguage } from '@/context/LanguageContext';
 import {
   getHubs,
+  getKpiData,
   getReasons,
   getVehicles,
   patchDriverMceasy,
@@ -137,9 +138,14 @@ export default function DataSync({ children }) {
 
       const now = new Date();
       const todayStr = formatDateUniversal(now, 'YYYY-MM-DD');
-      const yesterday = new Date(now);
-      yesterday.setDate(yesterday.getDate() - 1);
-      const yesterdayStr = formatDateUniversal(yesterday, 'YYYY-MM-DD');
+
+      const pastDates = [];
+      for (let i = 3; i >= 1; i--) {
+        const d = new Date(now);
+        d.setDate(d.getDate() - i);
+        pastDates.push(formatDateUniversal(d, 'YYYY-MM-DD'));
+      }
+      const yesterdayStr = pastDates[pastDates.length - 1];
 
       const targetHubId = storedLocation;
       const syncKey = `tms_last_sync_date_${targetHubId}`;
@@ -161,9 +167,15 @@ export default function DataSync({ children }) {
 
       try {
         setStatus('common.task');
-        await Promise.allSettled(
-          [yesterdayStr, todayStr].map((dStr) => sync(['tasks'], dStr, 20000))
-        );
+        if (isInitialSync) {
+          await Promise.allSettled(
+            [...pastDates, todayStr].map((dStr) => sync(['tasks'], dStr, 20000))
+          );
+        } else {
+          await Promise.allSettled(
+            [yesterdayStr, todayStr].map((dStr) => sync(['tasks'], dStr, 20000))
+          );
+        }
 
         if (isInitialSync) {
           setStatus('common.routing');
@@ -203,7 +215,20 @@ export default function DataSync({ children }) {
         localStorage.setItem(syncKey, todayStr);
         localStorage.setItem('tms_last_sync_date', todayStr);
 
-        await handleKpiProcess(targetHubId, yesterdayStr, storedUser);
+        if (isInitialSync) {
+          const existingKpiList = await getKpiData({
+            hubId: targetHubId,
+            dateFrom: pastDates[0],
+            dateTo: yesterdayStr,
+          }).catch(() => []);
+          const existingDates = new Set((existingKpiList || []).map((k) => k.date));
+
+          for (const dStr of pastDates) {
+            if (!existingDates.has(dStr)) {
+              await handleKpiProcess(targetHubId, dStr, storedUser);
+            }
+          }
+        }
 
         window.dispatchEvent(new CustomEvent('tms-pending-details-updated'));
         localStorage.setItem('tms_pending_details_last_update', Date.now().toString());

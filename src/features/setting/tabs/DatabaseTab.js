@@ -17,7 +17,7 @@ import {
   parseCustomerString,
 } from '@/lib/utils';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { downloadDateRangeZip, downloadSingleDateExcel } from '../helper/dataDetail';
+import { downloadDateRangeZip, downloadSingleDateExcel } from '../helper/databaseHelper';
 
 function UserAuditCell({ user, timestamp, highlight }) {
   const dateStr = timestamp ? formatDateUniversal(timestamp, 'DD-MM-YYYY HH:mm:ss') : '-';
@@ -202,20 +202,6 @@ export default function DatabaseTab({ hubId, hubName = '', dateRange = [], trans
         ),
       },
       {
-        label: translate('common.total_task'),
-        key: 'taskCount',
-        align: 'center',
-        sortable: true,
-        width: 'w-[14%]',
-        render: (row) => (
-          <div className="flex justify-center text-center">
-            <span className="text-xs font-semibold text-slate-700 dark:text-slate-300">
-              {row.taskCount ?? 0}
-            </span>
-          </div>
-        ),
-      },
-      {
         label: translate('common.dropped_task'),
         key: 'dropped',
         align: 'center',
@@ -228,6 +214,34 @@ export default function DatabaseTab({ hubId, hubName = '', dateRange = [], trans
             </span>
           </div>
         ),
+      },
+      {
+        label: translate('common.histories'),
+        key: 'histories',
+        align: 'center',
+        sortable: true,
+        width: 'w-[14%]',
+        render: (row) => {
+          const totalHistories =
+            typeof row.histories === 'object' && row.histories !== null
+              ? (row.histories.total ?? 0)
+              : typeof row.histories === 'string'
+                ? (() => {
+                    try {
+                      return JSON.parse(row.histories)?.total ?? 0;
+                    } catch {
+                      return 0;
+                    }
+                  })()
+                : 0;
+          return (
+            <div className="flex justify-center text-center">
+              <span className="text-xs font-semibold text-slate-700 dark:text-slate-300">
+                {totalHistories}
+              </span>
+            </div>
+          );
+        },
       },
       {
         label: translate('common.created_by'),

@@ -61,21 +61,31 @@ export async function patchVehicleMceasy(activeHubId, storedLocationName, explic
     return { success: true };
   }
 
-  const { getVehiclesStatuses } = await import('../mceasy');
+  const { getVehiclesStatuses, patchVehicle: patchMceasyVehicle } = await import('../mceasy');
   const { getBasePlate } = await import('../../utils');
+  const { getDrivers } = await import('./drivers');
 
   const rawLoc = (storedLocationName || '').replace(/^Hub\s+/i, '').trim();
   const targetLocation = rawLoc.toUpperCase() === 'GIIC' ? 'Cikarang' : rawLoc;
-  const [mceasyData, dbVehicles] = await Promise.all([
+  const [mceasyData, dbVehicles, dbDrivers] = await Promise.all([
     getVehiclesStatuses({ location: targetLocation }),
     getVehicles(activeHubId),
+    getDrivers(activeHubId),
   ]);
 
   const mismatched = [];
   const matched = [];
+  const autoUpdates = [];
 
   const list = Array.isArray(dbVehicles) ? dbVehicles : [];
   const mcList = Array.isArray(mceasyData) ? mceasyData : [];
+  const driversList = Array.isArray(dbDrivers) ? dbDrivers : [];
+
+  const driverMap = new Map();
+  driversList.forEach((d) => {
+    driverMap.set(d.id, d);
+    if (d.email) driverMap.set(d.email.toLowerCase().trim(), d);
+  });
 
   list.forEach((v) => {
     const vBasePlat = getBasePlate(v.license_number)?.replace(/\s+/g, '')?.toUpperCase();
@@ -89,31 +99,104 @@ export async function patchVehicleMceasy(activeHubId, storedLocationName, explic
       );
     }
 
-    if (mcMatch) {
-      const mcPlat = mcMatch.licensePlate?.replace(/\s+/g, '')?.toUpperCase();
-      const vehicleKey = mcMatch.vehicleId || mcMatch.id;
-      const isPlatMatch = mcPlat === vBasePlat;
+    if (!mcMatch) return;
 
-      if (isPlatMatch) {
-        matched.push({
-          id: v.id,
-          vehicle_id: v.vehicle_id,
-          imei: mcMatch.imei,
-          vms_id: vehicleKey,
-        });
-      } else {
-        mismatched.push({
-          id: v.id,
-          vehicle_id: v.vehicle_id,
-          imei: mcMatch.imei,
-          maPlat: v.license_number,
-          maPlatBase: vBasePlat,
-          mcPlat: mcMatch.licensePlate || '-',
-          mcVehicleId: vehicleKey,
-        });
-      }
+    const mcPlat = mcMatch.licensePlate?.replace(/\s+/g, '')?.toUpperCase();
+    const vehicleKey = mcMatch.vehicleId || mcMatch.id;
+    const isPlatMatch = mcPlat === vBasePlat;
+
+    const tmsDriver = v.driver_id ? driverMap.get(v.driver_id) : (v.driver_email ? driverMap.get(v.driver_email.toLowerCase().trim()) : null);
+    const tmsDriverVmsId = tmsDriver?.vms_id ? String(tmsDriver.vms_id) : null;
+    const vmsDriverId = mcMatch.driverId ? String(mcMatch.driverId) : null;
+    const isDriverMatch = !tmsDriverVmsId || vmsDriverId === tmsDriverVmsId;
+
+    const maCleanName = (tmsDriver?.name || v.driver_name || '')
+      .replace(/^'[^']+'\s*/, '')
+      .replace(/^(dry|frozen)[\s\-_]*/i, '')
+      .replace(/\s+/g, ' ')
+      .trim();
+
+    if (isPlatMatch && isDriverMatch) {
+      matched.push({
+        id: v.id,
+        vehicle_id: v.vehicle_id,
+        imei: mcMatch.imei,
+        vms_id: vehicleKey,
+      });
+    } else if (!tmsDriverVmsId && !isDriverMatch) {
+      mismatched.push({
+        id: v.id,
+        vehicle_id: v.vehicle_id,
+        imei: mcMatch.imei,
+        maName: tmsDriver?.name || v.driver_name || '-',
+        maNameClean: maCleanName || '-',
+        maPlat: v.license_number,
+        maPlatBase: vBasePlat,
+        mcName: mcMatch.driver1?.fullname || '-',
+        mcPlat: mcMatch.licensePlate || '-',
+        mcVehicleId: vehicleKey,
+        vmsDriverId: mcMatch.driverId,
+      });
+    } else {
+      autoUpdates.push({
+        mcVehicleId: vehicleKey,
+        targetPlat: !isPlatMatch ? getBasePlate(v.license_number) : undefined,
+        targetDriverId: !isDriverMatch ? tmsDriverVmsId : undefined,
+      });
+      matched.push({
+        id: v.id,
+        vehicle_id: v.vehicle_id,
+        imei: mcMatch.imei,
+        vms_id: vehicleKey,
+      });
     }
   });
+
+  if (autoUpdates.length > 0) {
+    const targetDriverIds = new Set(
+      autoUpdates
+        .map((u) => u.targetDriverId)
+        .filter((id) => id && id !== '-')
+        .map(String)
+    );
+
+    const vehiclesToClear = new Set();
+    autoUpdates.forEach((u) => {
+      if (u.mcVehicleId && u.targetDriverId !== undefined) {
+        vehiclesToClear.add(u.mcVehicleId);
+      }
+    });
+    mcList.forEach((mc) => {
+      const vId = mc.vehicleId || mc.id;
+      if (vId && mc.driverId && targetDriverIds.has(String(mc.driverId))) {
+        vehiclesToClear.add(vId);
+      }
+    });
+
+    for (const vehicleId of vehiclesToClear) {
+      try {
+        const clearPayload = new URLSearchParams({ driver1Id: '-' });
+        await patchMceasyVehicle(vehicleId, clearPayload.toString());
+      } catch (err) {
+        console.warn(`[Auto-Sync VMS] Unassign driver vehicle ${vehicleId} error:`, err.message);
+      }
+    }
+
+    for (const update of autoUpdates) {
+      try {
+        const payload = new URLSearchParams();
+        if (update.targetPlat) {
+          payload.append('licensePlate', update.targetPlat);
+        }
+        if (update.targetDriverId !== undefined) {
+          payload.append('driver1Id', update.targetDriverId || '-');
+        }
+        await patchMceasyVehicle(update.mcVehicleId, payload.toString());
+      } catch (err) {
+        console.warn(`[Auto-Sync VMS] Update vehicle ${update.mcVehicleId} error:`, err.message);
+      }
+    }
+  }
 
   return { success: mismatched.length === 0, matched, mismatched };
 }

@@ -134,19 +134,13 @@ export async function validateKpiReadiness({ hubId, deliveryDate }) {
     };
   }
 
-  const nonSuccessTasks = tasks.filter((t) => {
+  const pendingTasks = tasks.filter((t) => {
     const sdNorm = normalizeDeliveryStatus(t.status_delivery);
-    if (sdNorm === DELIVERY_STATUS_KEYS.SUCCESS) return false;
-
-    const isPendingGr =
-      sdNorm === DELIVERY_STATUS_KEYS.PENDING_GR ||
-      (t.status_delivery || '').toUpperCase().includes('PENDING GR');
-
-    return !isPendingGr;
+    return sdNorm === DELIVERY_STATUS_KEYS.PENDING;
   });
 
-  if (nonSuccessTasks.length > 0) {
-    const taskIds = nonSuccessTasks.map((t) => t.id);
+  if (pendingTasks.length > 0) {
+    const taskIds = pendingTasks.map((t) => t.id);
     const existingDetails = await prisma.pendingDetail.findMany({
       where: { task_id: { in: taskIds } },
     });
@@ -154,7 +148,7 @@ export async function validateKpiReadiness({ hubId, deliveryDate }) {
     existingDetails.forEach((pd) => pendingMap.set(pd.task_id, pd));
 
     const missingTasks = [];
-    nonSuccessTasks.forEach((t) => {
+    pendingTasks.forEach((t) => {
       const pd = pendingMap.get(t.id);
       const effectiveStatus = pd?.new_status || t.status_delivery;
       const isSuccessConversion =

@@ -72,25 +72,39 @@ export function buildDateWorkbook({
     'ID Routing',
     'Nama Routing',
     'Tanggal Pengiriman',
-    'Total Task',
     'Dropped',
+    'Histories',
     'Created By',
     'Created At',
     'Updated By',
     'Updated At',
   ];
-  const routingRows = routing.map((r, i) => [
-    i + 1,
-    r.id || '',
-    r.name || '',
-    r.deliveryDate || dateStr,
-    r.taskCount ?? 0,
-    r.dropped ?? 0,
-    r.sync_user?.created_by || r.createdBy || '',
-    r.sync_user?.created_at || r.createdAt || '',
-    r.sync_user?.updated_by || r.updatedBy || '',
-    r.sync_user?.updated_at || r.updatedAt || '',
-  ]);
+  const routingRows = routing.map((r, i) => {
+    const totalHistories =
+      typeof r.histories === 'object' && r.histories !== null
+        ? (r.histories.total ?? 0)
+        : typeof r.histories === 'string'
+          ? (() => {
+              try {
+                return JSON.parse(r.histories)?.total ?? 0;
+              } catch {
+                return 0;
+              }
+            })()
+          : 0;
+    return [
+      i + 1,
+      r.id || '',
+      r.name || '',
+      r.deliveryDate || dateStr,
+      r.dropped ?? 0,
+      totalHistories,
+      r.sync_user?.created_by || r.createdBy || '',
+      r.sync_user?.created_at || r.createdAt || '',
+      r.sync_user?.updated_by || r.updatedBy || '',
+      r.sync_user?.updated_at || r.updatedAt || '',
+    ];
+  });
   const wsRouting = createStyledSheet(
     [routingHeader, ...routingRows],
     [6, 25, 30, 18, 12, 10, 18, 20, 18, 20],

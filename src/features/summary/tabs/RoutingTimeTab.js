@@ -103,10 +103,10 @@ function getTooltipContent({ target, typeData, hasError, timeType, translate }) 
   const routingDayText = target.actualRoutingDay
     ? translate?.('summary.tabs.routing_time.tooltip.routing_done_on', {
         day: target.actualRoutingDay,
-      }) || `Routing dilakukan pada hari ${target.actualRoutingDay}`
+      })
     : '';
 
-  return [invoiceText, batchInfo, routingDayText].filter(Boolean).join(' • ');
+  return [invoiceText, batchInfo, routingDayText].filter(Boolean).join(' \n ');
 }
 
 function TimeCell({ target, typeData, hasError, timeType, translate }) {
@@ -193,9 +193,7 @@ export default function RoutingTimeTab({ tasks, startDateStr, endDateStr, transl
 
         if (targetRow && tasksByDate[taskDateKey]) {
           const parsedCustomer =
-            parseCustomerString(task.customerOrder) ||
-            parseCustomerString(task.customerName) ||
-            {};
+            parseCustomerString(task.customerOrder) || parseCustomerString(task.customerName) || {};
 
           const isValidRoutedTask =
             task.assignedTime &&
@@ -232,10 +230,10 @@ export default function RoutingTimeTab({ tasks, startDateStr, endDateStr, transl
             if (actualDateKey !== dateKey) {
               const cTime = new Date(result.startTask.createdTime).getTime();
               const wibDate = new Date(cTime + WIB_OFFSET_MS);
-              actualRoutingDay = wibDate.toLocaleDateString(
-                localeCode === 'en' ? 'en-US' : 'id-ID',
-                { weekday: 'long', timeZone: 'UTC' }
-              );
+              actualRoutingDay = wibDate.toLocaleDateString(localeCode, {
+                weekday: 'long',
+                timeZone: 'UTC',
+              });
             }
           }
 

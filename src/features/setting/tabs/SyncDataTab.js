@@ -115,7 +115,7 @@ export default function SyncDataTab({
     setIsDriverLoading(true);
     try {
       const [res, mileappData] = await Promise.all([
-        getMceasyUsers({ 'position-name': 'Driver' }),
+        getMceasyUsers({ 'position-name': 'Driver', show: 10000 }),
         getDrivers(syncScope.mode === 'global' ? 'all' : activeHubId),
       ]);
 
@@ -697,6 +697,7 @@ export default function SyncDataTab({
       {pendingKpiTasks.length > 0 && (
         <PendingReasonModal
           isOpen={true}
+          noClose={true}
           data={pendingKpiTasks}
           reasons={kpiReasonsList}
           onClose={() => {
