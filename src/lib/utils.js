@@ -150,17 +150,18 @@ export function parseCustomerString(fullString) {
 
   const parts = fullString.split(/\s+-\s+/);
 
-  let id = parts.find((p) => /^C\d+/.test(p) && !p.includes(' '));
-  if (!id && parts.length >= 2) {
-    id = parts[1];
+  let idIndex = parts.findIndex((p) => /^C\d+/.test(p) && !p.includes(' '));
+  if (idIndex === -1 && parts.length >= 2) {
+    idIndex = 1;
   }
-  id = id !== undefined ? id : '';
+
+  let id = idIndex !== -1 ? parts[idIndex] : '';
 
   let location = null;
   let invoiceNumber = '';
   let truncateInvoice = '';
   let isTruncated = false;
-  if (parts.length > 2) {
+  if (parts.length > 2 && idIndex !== -1 && idIndex < parts.length - 1) {
     const rawLocation = parts[parts.length - 1];
     const commaSplit = rawLocation.split(',');
     location = commaSplit[0].trim();
@@ -184,7 +185,13 @@ export function parseCustomerString(fullString) {
 
   location = location !== null ? location : '';
 
-  const name = parts[0] && parts[0] !== id ? parts[0] : '';
+  let name = '';
+  if (idIndex > 0) {
+    name = parts.slice(0, idIndex).join(' - ');
+  } else if (parts[0] && parts[0] !== id) {
+    name = parts[0];
+  }
+
   const fullCustomerName = id !== '' || location !== '' ? `${name} - ${id} - ${location}` : name;
 
   return { name, id, location, fullCustomerName, invoiceNumber, isTruncated, truncateInvoice };
