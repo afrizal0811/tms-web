@@ -147,6 +147,14 @@ export default function DataSync({ children }) {
       }
       const yesterdayStr = pastDates[pastDates.length - 1];
 
+      const tomorrow = new Date(now);
+      tomorrow.setDate(now.getDate() + 1);
+      const tomorrowStr = formatDateUniversal(tomorrow, 'YYYY-MM-DD');
+
+      const dayAfterTomorrow = new Date(now);
+      dayAfterTomorrow.setDate(now.getDate() + 2);
+      const dayAfterTomorrowStr = formatDateUniversal(dayAfterTomorrow, 'YYYY-MM-DD');
+
       const targetHubId = storedLocation;
       const syncKey = `tms_last_sync_date_${targetHubId}`;
       const isInitialSync = localStorage.getItem(syncKey) !== todayStr;
@@ -173,7 +181,7 @@ export default function DataSync({ children }) {
           );
         } else {
           await Promise.allSettled(
-            [yesterdayStr, todayStr].map((dStr) => sync(['tasks'], dStr, 20000))
+            [todayStr, tomorrowStr].map((dStr) => sync(['tasks'], dStr, 20000))
           );
         }
 
@@ -205,6 +213,14 @@ export default function DataSync({ children }) {
           } catch (err) {
             console.warn('[DataSync] Hub/VMS check error:', err.message);
           }
+        } else {
+          await Promise.allSettled(
+            [todayStr, tomorrowStr, dayAfterTomorrowStr].map((dStr) =>
+              sync(['results'], dStr, 15000).catch((err) =>
+                console.warn('[DataSync] Background routing sync error:', err.message)
+              )
+            )
+          );
         }
 
         setStatus('common.driver_location');

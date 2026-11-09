@@ -534,7 +534,7 @@ export default function SyncDataTab({
       label: translate('setting.tab.sync_data.driver_vehicles'),
     },
     {
-      type: 'routing',
+      type: 'mains',
       label: translate('setting.tab.sync_data.main_data'),
     },
   ];
@@ -558,7 +558,7 @@ export default function SyncDataTab({
       );
     }
 
-    if (type === 'routing') {
+    if (type === 'mains') {
       return (
         <Button
           type="split"
@@ -587,7 +587,7 @@ export default function SyncDataTab({
 
   const renderCardContent = (type, label) => {
     const isDriverType = type === 'drivers';
-    const isRoutingType = type === 'routing';
+    const isRoutingType = type === 'mains';
 
     return (
       <div
