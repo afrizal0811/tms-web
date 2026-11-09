@@ -231,6 +231,7 @@ export default function RoutingActualTab({ loading, tasks, results, drivers, sel
         data={processedData}
         isOpen={isMapModalOpen}
         onClose={() => setIsMapModalOpen(false)}
+        selectedDate={selectedDate}
       />
       <TaskModal
         isOpen={isTaskModalOpen}

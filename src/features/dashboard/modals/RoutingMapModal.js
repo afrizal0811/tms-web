@@ -1,10 +1,21 @@
 'use client';
 
+import Button from '@/components/button/Button';
+import Dropdown from '@/components/dropdown/Dropdown';
 import Modal from '@/components/modal/Modal';
 import { useLanguage } from '@/context/LanguageContext';
-import { getBasePlate, isEmpty, parseCoordinates, parseCustomerString } from '@/lib/utils';
+import { getLocalStorage } from '@/lib/localStorageHandler';
+import {
+  formatDateUniversal,
+  getBasePlate,
+  isEmpty,
+  parseCoordinates,
+  parseCustomerString,
+} from '@/lib/utils';
+import JSZip from 'jszip';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import MapViewSection from '../components/MapViewSection';
+import { renderGroupToJpeg } from '../helper/help';
 
 const getGroupKey = (item) => {
   const driver = item?.driver || item?.assignee || 'N/A';
@@ -13,13 +24,15 @@ const getGroupKey = (item) => {
   return `${driver}_${plat}`;
 };
 
-export default function RoutingMapModal({ isOpen, onClose, data }) {
+export default function RoutingMapModal({ isOpen, onClose, data, selectedDate }) {
   const { t } = useLanguage();
   const [userSelectedGroup, setUserSelectedGroup] = useState('');
   const [selectedCustomer, setSelectedCustomer] = useState('');
+  const [taskFilterType, setTaskFilterType] = useState('real');
   const [prevGroup, setPrevGroup] = useState(null);
   const [mapRo, setMapRo] = useState(null);
   const [mapReal, setMapReal] = useState(null);
+  const [isExporting, setIsExporting] = useState(false);
 
   useEffect(() => {
     if (!mapRo || !mapReal) return;
@@ -61,6 +74,26 @@ export default function RoutingMapModal({ isOpen, onClose, data }) {
     });
     return Array.from(map.values()).sort((a, b) => a.label.localeCompare(b.label));
   }, [data]);
+
+  const formattedDateStr = useMemo(() => {
+    return formatDateUniversal(selectedDate || new Date(), 'DD.MM.YYYY');
+  }, [selectedDate]);
+
+  const hubAcronym = useMemo(() => {
+    const { storedLocationAcronym, storedLocationName } = getLocalStorage();
+    return storedLocationAcronym || storedLocationName || 'HUB';
+  }, []);
+
+  const getPlateNumber = useCallback(
+    (groupVal) => {
+      const currentGroupObj = groups.find((g) => g.value === groupVal);
+      const match = currentGroupObj?.label.match(/\(([^)]+)\)/);
+      if (match && match[1]) return match[1].trim();
+      const parts = (groupVal || '').split('_');
+      return (parts[1] || groupVal || 'VEHICLE').trim();
+    },
+    [groups]
+  );
 
   const selectedGroup = useMemo(() => {
     if (userSelectedGroup && groups.some((g) => g.value === userSelectedGroup)) {
@@ -111,9 +144,12 @@ export default function RoutingMapModal({ isOpen, onClose, data }) {
   const customerOptions = useMemo(() => {
     if (!filteredTasks.length) return [];
 
-    const sortedTasks = [...filteredTasks].sort(
-      (a, b) => (a.realSequence ?? 999999) - (b.realSequence ?? 999999)
-    );
+    const sortedTasks = [...filteredTasks].sort((a, b) => {
+      if (taskFilterType === 'plan') {
+        return (a.roSequence ?? 999999) - (b.roSequence ?? 999999);
+      }
+      return (a.realSequence ?? 999999) - (b.realSequence ?? 999999);
+    });
 
     const options = [];
     const seen = new Set();
@@ -133,9 +169,17 @@ export default function RoutingMapModal({ isOpen, onClose, data }) {
         const displayName = resolveDisplayName(rawStr, t.flow);
         if (!seen.has(displayName)) {
           seen.add(displayName);
+          const prefix =
+            taskFilterType === 'plan'
+              ? !isEmpty(t.roSequence)
+                ? `${t.roSequence}. `
+                : ''
+              : !isEmpty(t.realSequence)
+                ? `${t.realSequence}. `
+                : '';
           options.push({
             value: displayName,
-            label: displayName,
+            label: `${prefix}${displayName}`,
             isPending: isPending,
           });
         }
@@ -144,7 +188,7 @@ export default function RoutingMapModal({ isOpen, onClose, data }) {
 
     const hasHub = filteredTasks.some((t) => t.type === 'HUB_START');
     return hasHub ? [{ value: 'HUB', label: 'HUB', isPending: false }, ...options] : options;
-  }, [filteredTasks, resolveDisplayName]);
+  }, [filteredTasks, resolveDisplayName, taskFilterType]);
 
   const handleFocusCustomer = async (val) => {
     setSelectedCustomer(val);
@@ -194,10 +238,70 @@ export default function RoutingMapModal({ isOpen, onClose, data }) {
 
   const handleCloseInfo = () => setSelectedCustomer('');
   const handleCloseModal = () => {
+    if (isExporting) return;
     setUserSelectedGroup('');
     setSelectedCustomer('');
     setPrevGroup(null);
     onClose();
+  };
+
+  const downloadFile = (href, filename) => {
+    const link = document.createElement('a');
+    link.download = filename;
+    link.href = href;
+    link.click();
+  };
+
+  const handleDownloadActiveJpg = async () => {
+    if (!filteredTasks.length || !selectedGroup) return;
+    setIsExporting(true);
+    try {
+      const L = (await import('leaflet')).default;
+      const { toJpeg } = await import('html-to-image');
+      const dataUrl = await renderGroupToJpeg(selectedGroup, data, L, toJpeg);
+      if (!dataUrl) throw new Error('No data');
+
+      const plate = getPlateNumber(selectedGroup);
+      downloadFile(dataUrl, `${plate} - ${formattedDateStr}.jpg`);
+    } catch {
+      // error silently handled
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
+  const handleDownloadAllZip = async () => {
+    if (!groups.length) return;
+    setIsExporting(true);
+    try {
+      const L = (await import('leaflet')).default;
+      const { toJpeg } = await import('html-to-image');
+      const zip = new JSZip();
+
+      for (let i = 0; i < groups.length; i++) {
+        const grp = groups[i];
+        const dataUrl = await renderGroupToJpeg(grp.value, data, L, toJpeg);
+        if (dataUrl) {
+          const base64Data = dataUrl.split(',')[1];
+          const plate = getPlateNumber(grp.value);
+          zip.file(`${plate} - ${formattedDateStr}.jpg`, base64Data, { base64: true });
+        }
+      }
+
+      const content = await zip.generateAsync({
+        type: 'blob',
+        compression: 'DEFLATE',
+        compressionOptions: { level: 6 },
+      });
+      const zipUrl = URL.createObjectURL(content);
+
+      downloadFile(zipUrl, `Routing - ${formattedDateStr} - ${hubAcronym}.zip`);
+      URL.revokeObjectURL(zipUrl);
+    } catch {
+      // error silently handled
+    } finally {
+      setIsExporting(false);
+    }
   };
 
   const headerContent = (
@@ -205,30 +309,53 @@ export default function RoutingMapModal({ isOpen, onClose, data }) {
       <div className="flex flex-row gap-2 w-full lg:w-auto items-end ml-auto">
         <div className="flex flex-col w-1/2 lg:w-64 gap-1">
           <label className="text-[10px] font-bold tracking-wide">{t('common.driver')}</label>
-          <select
+          <Dropdown
+            options={groups}
             value={selectedGroup}
-            onChange={(e) => setUserSelectedGroup(e.target.value)}
-            onClick={(e) => e.stopPropagation()}
-            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm font-semibold text-slate-700 outline-none bg-gray-50 cursor-pointer"
-          >
-            {groups.map((g) => (
-              <option key={g.value} value={g.value}>
-                {g.label}
-              </option>
-            ))}
-          </select>
+            onChange={(val) => setUserSelectedGroup(val)}
+            getLabel={(val) => groups.find((g) => g.value === val)?.label || val}
+            disabled={!groups.length || isExporting}
+            size="sm"
+            textSize="text-xs"
+            isAutocomplete={true}
+            className="w-full text-slate-700 font-semibold"
+          />
         </div>
 
-        <div className="flex flex-col w-1/2 lg:w-64 gap-1">
-          <label className="text-[10px] font-bold tracking-wide">
-            {`${t('common.task')}  (${t('dashboard.map.real')})`}
-          </label>
+        <div className="flex flex-col w-1/2 lg:w-72 gap-1">
+          <div className="flex items-center justify-between">
+            <label className="text-[10px] font-bold tracking-wide">{t('common.task')}</label>
+            <div className="flex items-center gap-0.5 bg-gray-200/80 p-0.5 rounded text-[10px] font-semibold">
+              <button
+                type="button"
+                onClick={() => setTaskFilterType('plan')}
+                className={`px-1.5 py-0.5 rounded cursor-pointer transition-colors ${
+                  taskFilterType === 'plan'
+                    ? 'bg-teal-700 text-white shadow-xs'
+                    : 'text-gray-600 hover:text-gray-900'
+                }`}
+              >
+                {t('dashboard.map.plan')}
+              </button>
+              <button
+                type="button"
+                onClick={() => setTaskFilterType('real')}
+                className={`px-1.5 py-0.5 rounded cursor-pointer transition-colors ${
+                  taskFilterType === 'real'
+                    ? 'bg-green-700 text-white shadow-xs'
+                    : 'text-gray-600 hover:text-gray-900'
+                }`}
+              >
+                {t('dashboard.map.real')}
+              </button>
+            </div>
+          </div>
           <select
             value={selectedCustomer}
             onChange={(e) => handleFocusCustomer(e.target.value)}
             onClick={(e) => e.stopPropagation()}
             disabled={!selectedGroup}
-            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm text-slate-700 outline-none bg-gray-50 cursor-pointer disabled:opacity-50"
+            className="w-full border border-gray-300 rounded-lg px-3 py-1.5 text-xs text-slate-700 outline-none bg-gray-50 cursor-pointer disabled:opacity-50 h-8"
           >
             {customerOptions.map((opt, i) => (
               <option
@@ -242,6 +369,24 @@ export default function RoutingMapModal({ isOpen, onClose, data }) {
             ))}
           </select>
         </div>
+
+        <Button
+          type="split"
+          size="sm"
+          text={t('common.download')}
+          isLoading={isExporting}
+          disabled={!selectedGroup || isExporting}
+          onClick={handleDownloadAllZip}
+          className="bg-sky-600 text-white hover:bg-sky-700 dark:bg-sky-600 border border-sky-800/60"
+          width="w-auto"
+          options={[
+            {
+              id: 'current',
+              label: `${t('common.download')} (${getPlateNumber(selectedGroup)})`,
+              onClick: handleDownloadActiveJpg,
+            },
+          ]}
+        />
       </div>
     </div>
   );
@@ -250,6 +395,7 @@ export default function RoutingMapModal({ isOpen, onClose, data }) {
     <Modal
       isOpen={isOpen}
       onClose={handleCloseModal}
+      noClose={isExporting}
       title={t('dashboard.map.title')}
       subtitle={t('dashboard.map.subtitle')}
       headerContent={headerContent}
@@ -263,7 +409,7 @@ export default function RoutingMapModal({ isOpen, onClose, data }) {
             title={t('dashboard.map.plan')}
             tasks={filteredTasks}
             sequenceKey="roSequence"
-            colorClass="bg-[#0D9488]"
+            colorClass="bg-[#D97706]"
             lineColor="#FF0000"
             setMap={setMapRo}
             onMarkerClick={onMarkerClick}
@@ -277,7 +423,7 @@ export default function RoutingMapModal({ isOpen, onClose, data }) {
             title={t('dashboard.map.real')}
             tasks={filteredTasks}
             sequenceKey="realSequence"
-            colorClass="bg-[#16A34A]"
+            colorClass="bg-[#10B981]"
             lineColor="#FF0000"
             setMap={setMapReal}
             onMarkerClick={onMarkerClick}

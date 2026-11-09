@@ -45,7 +45,7 @@ const InfoCard = ({
   customTitle,
   pickupCount,
   completedPickupCount,
-  isActualMap,
+  isActualMap = true,
   t,
 }) => {
   const [isMinimized, setIsMinimized] = useState(false);
@@ -72,76 +72,28 @@ const InfoCard = ({
     if (isCompleted) {
       if (isActualMap) {
         return {
-          bgHeader: 'bg-[#16A34A]', // Actual Completed: Green
-          bgBody: 'bg-green-50',
+          bgHeader: 'bg-[#10B981]',
+          bgBody: 'bg-emerald-50',
           textHeader: 'text-white',
-          textSub: 'text-green-100',
-          border: 'border-[#16A34A]',
-          iconColor: 'text-green-600',
+          textSub: 'text-emerald-100',
+          border: 'border-[#10B981]',
+          iconColor: 'text-emerald-600',
         };
       } else {
         return {
-          bgHeader: 'bg-[#0D9488]', // Plan Completed: Teal
-          bgBody: 'bg-teal-50',
+          bgHeader: 'bg-[#D97706]',
+          bgBody: 'bg-amber-50',
           textHeader: 'text-white',
-          textSub: 'text-teal-100',
-          border: 'border-[#0D9488]',
-          iconColor: 'text-teal-600',
+          textSub: 'text-amber-100',
+          border: 'border-[#D97706]',
+          iconColor: 'text-amber-600',
         };
       }
     }
 
-    // 3. Manual Assign
-    if (task.isManualAssign) {
-      return {
-        bgHeader: 'bg-[#64748B]', // Manual: Slate
-        bgBody: 'bg-slate-50',
-        textHeader: 'text-white',
-        textSub: 'text-slate-100',
-        border: 'border-[#64748B]',
-        iconColor: 'text-slate-600',
-      };
-    }
-
-    // 4. Status Not Completed
-    const flow = (task.flow || '').toLowerCase();
-
-    if (flow.includes('pickup')) {
-      return {
-        bgHeader: 'bg-[#9333EA]', // Pickup: Purple
-        bgBody: 'bg-purple-50',
-        textHeader: 'text-white',
-        textSub: 'text-purple-100',
-        border: 'border-[#9333EA]',
-        iconColor: 'text-purple-600',
-      };
-    }
-
-    if (flow.includes('re delivery')) {
-      return {
-        bgHeader: 'bg-[#F97316]', // Re Delivery: Orange
-        bgBody: 'bg-orange-50',
-        textHeader: 'text-white',
-        textSub: 'text-orange-100',
-        border: 'border-[#F97316]',
-        iconColor: 'text-orange-600',
-      };
-    }
-
-    if (flow.includes('pending gr')) {
-      return {
-        bgHeader: 'bg-[#FFDE21]', // Pending GR: Yellow
-        bgBody: 'bg-yellow-50',
-        textHeader: 'text-slate-900',
-        textSub: 'text-slate-700',
-        border: 'border-[#FFDE21]',
-        iconColor: 'text-yellow-600',
-      };
-    }
-
-    // Default (Delivery)
+    // Default (Ongoing Task)
     return {
-      bgHeader: 'bg-[#2563EB]', // Delivery: Blue
+      bgHeader: 'bg-[#2563EB]',
       bgBody: 'bg-blue-50',
       textHeader: 'text-white',
       textSub: 'text-blue-100',
@@ -152,9 +104,9 @@ const InfoCard = ({
 
   if (!task) return null;
 
-  const custInfo = parseCustomerString(task.customerName);
+  const custInfo = parseCustomerString(task.customerName || task.originalCustomerString);
   const cleanName = custInfo.name || 'HUB';
-  const custId = custInfo.id || '-';
+  const custId = task.customerId || custInfo.id || '-';
   const flowType = task.flow || '-';
   const isManual = task.isManualAssign;
   const displayTitle = customTitle || cleanName;

@@ -86,13 +86,7 @@ const ArrowPolyline = ({ Marker, Polyline, icons, segments, defaultColor }) => {
   );
 };
 
-const LegendItem = ({ color, label }) => (
-  <div className="flex items-center gap-1.5">
-    <span className={`w-3 h-3 rounded-full ${color}`}></span>
-    <span className="whitespace-nowrap">{label}</span>
-  </div>
-);
-
+export { applyJitter, ArrowPolyline, getAngle };
 export default function MapViewSection({
   title,
   tasks,
@@ -250,7 +244,6 @@ export default function MapViewSection({
                     let textSizeClass = 'text-xs';
 
                     const isHub = task.type === 'HUB_START' || task.type === 'HUB_END';
-                    const flow = (task.flow || '').toLowerCase();
                     const isCompleted = !isEmpty(task.realSequence);
 
                     if (isHub) {
@@ -258,29 +251,11 @@ export default function MapViewSection({
                       finalContent = 'HUB';
                       textSizeClass = 'text-[8px] tracking-tighter';
                     } else if (isCompleted) {
-                      if (flow.includes('pickup')) {
-                        const allPickupDone =
-                          pickupCount > 0 && completedPickupCount === pickupCount;
-                        markerBgClass = allPickupDone
-                          ? isActualMap
-                            ? 'bg-[#16A34A]'
-                            : 'bg-[#0D9488]'
-                          : 'bg-[#9333EA]';
-                      } else {
-                        markerBgClass = isActualMap ? 'bg-[#16A34A]' : 'bg-[#0D9488]';
-                      }
+                      markerBgClass = isActualMap ? 'bg-[#10B981]' : 'bg-[#D97706]';
                     } else {
+                      markerBgClass = 'bg-[#2563EB]';
                       if (task.isManualAssign) {
-                        markerBgClass = 'bg-[#64748B]';
                         finalContent = isActualMap ? seqNum : '-';
-                      } else if (flow.includes('pickup')) {
-                        markerBgClass = 'bg-[#9333EA]';
-                      } else if (flow.includes('re delivery')) {
-                        markerBgClass = 'bg-[#F97316]';
-                      } else if (flow.includes('pending gr')) {
-                        markerBgClass = 'bg-[#FFDE21]';
-                      } else {
-                        markerBgClass = 'bg-[#2563EB]';
                       }
                     }
 
@@ -309,26 +284,6 @@ export default function MapViewSection({
             {t('dashboard.map.no_coordinate')}
           </div>
         )}
-      </div>
-
-      <div className="hidden md:flex flex-wrap px-4 py-2 bg-gray-50 border-t gap-x-4 gap-y-2 text-[10px] text-gray-600 font-medium z-10 shrink-0">
-        {!isActualMap ? (
-          <LegendItem
-            color="bg-[#0D9488]"
-            label={`${t('dashboard.map.plan')} ${t('dashboard.map.completed')}`}
-          />
-        ) : (
-          <LegendItem
-            color="bg-[#16A34A]"
-            label={`${t('dashboard.map.real')} ${t('dashboard.map.completed')}`}
-          />
-        )}
-        <LegendItem color="bg-[#000000]" label="HUB" />
-        <LegendItem color="bg-[#2563EB]" label="Delivery" />
-        <LegendItem color="bg-[#F97316]" label="Re Delivery" />
-        <LegendItem color="bg-[#FFDE21]" label="Pending GR" />
-        <LegendItem color="bg-[#9333EA]" label="Pickup" />
-        <LegendItem color="bg-[#64748B]" label="Manual Assign" />
       </div>
     </div>
   );
