@@ -20,6 +20,8 @@ model Hub {
   time_zone           TimeZone          @default(WIB)
   lat                 Float?
   lng                 Float?
+  created_by          String?
+  created_at          DateTime          @default(now())
   update_by           String?
   updated_at          DateTime          @updatedAt
   is_active           Boolean           @default(true)
@@ -128,7 +130,9 @@ model Role {
 model VehicleType {
   id         Int      @id @default(autoincrement())
   name       String   @unique
+  created_by String?
   created_at DateTime @default(now())
+  updated_by String?
   updated_at DateTime @updatedAt
 
   @@map("vehicle_type")
@@ -165,6 +169,9 @@ model Reason {
   reasons     String 
   pic         String
   category    String?
+  created_by  String?
+  created_at  DateTime @default(now())
+  updated_by  String?
   lastUpdated DateTime @updatedAt @default(now())
 
   @@unique([reasons, pic])

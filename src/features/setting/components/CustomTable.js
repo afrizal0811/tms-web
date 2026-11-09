@@ -1,7 +1,9 @@
 'use client';
 
+import InformationButton from '@/components/button/InformationButton';
 import TableData from '@/components/table/TableData';
 import { toastError } from '@/lib/toast';
+import { formatDateUniversal } from '@/lib/utils';
 import { useEffect, useRef, useState } from 'react';
 
 const EditIcon = () => (
@@ -95,7 +97,11 @@ export default function Table({
   };
 
   const handleValueChange = (field, value) => {
-    setEditValues((prev) => ({ ...prev, [field]: value }));
+    if (typeof field === 'object' && field !== null) {
+      setEditValues((prev) => ({ ...prev, ...field }));
+    } else {
+      setEditValues((prev) => ({ ...prev, [field]: value }));
+    }
   };
 
   const handleSaveClick = async (item) => {
@@ -129,6 +135,8 @@ export default function Table({
         const id = item[keyField] || item._id;
         const isEditing = editId === id;
 
+        const currentItem = isEditing ? { ...item, ...editValues } : item;
+
         return (
           <div className={`${col.cellClassName || ''} w-full`}>
             {isEditing && col.renderEdit
@@ -136,25 +144,68 @@ export default function Table({
                   editValues[col.field] ?? '',
                   (val) => handleValueChange(col.field, val),
                   () => handleSaveClick(item),
-                  item
+                  currentItem,
+                  handleValueChange
                 )
-              : col.render(item)}
+              : col.render(currentItem)}
           </div>
         );
       },
     })),
   ];
 
+  const renderAuditInfo = (item) => {
+    const createdBy = item.created_by || item.createdBy || item.creator;
+    const createdAt = item.created_time || item.created_at || item.createdAt;
+    const updatedBy = item.updated_by || item.updatedBy || item.update_by || item.updateBy;
+    const updatedAt = item.updated_time || item.updated_at || item.updatedAt || item.lastUpdated;
+
+    const hasCreated = Boolean(createdBy || createdAt);
+    const hasUpdated = Boolean(updatedBy || updatedAt);
+
+    if (!hasCreated && !hasUpdated) return null;
+
+    const formatInfo = (user, time) => {
+      const u = user || 'Admin';
+      const t = time ? formatDateUniversal(time, 'DD/MM/YY HH:mm:ss') : '-';
+      return `${u} (${t})`;
+    };
+
+    const content = (
+      <div className="flex flex-col gap-1 text-left min-w-[190px]">
+        {hasCreated && (
+          <div>
+            <span className="text-slate-400 font-semibold">{translate('common.created_by')}: </span>
+            <span className="font-medium text-white">{formatInfo(createdBy, createdAt)}</span>
+          </div>
+        )}
+        {hasUpdated && (
+          <div>
+            <span className="text-slate-400 font-semibold">{translate('common.updated_by')}: </span>
+            <span className="font-medium text-white">{formatInfo(updatedBy, updatedAt)}</span>
+          </div>
+        )}
+      </div>
+    );
+
+    return (
+      <div className="p-1.5 bg-slate-100 text-slate-500 hover:bg-slate-200 hover:text-slate-700 dark:bg-slate-800 dark:text-slate-400 dark:hover:bg-slate-700 dark:hover:text-slate-200 rounded transition-colors inline-flex items-center justify-center cursor-help [&_svg]:w-3.5 [&_svg]:h-3.5 md:[&_svg]:w-4 md:[&_svg]:h-4 [&_span]:text-inherit">
+        <InformationButton infoText={content} />
+      </div>
+    );
+  };
+
   if (!isReadOnly) {
     customColumns.push({
       key: 'actions',
-      width: 'w-20',
+      width: 'w-24',
       sortable: false,
       align: 'center',
       label: translate('common.action'),
       render: (item) => {
         const id = item[keyField] || item._id;
         const isEditing = editId === id;
+        const auditBtn = renderAuditInfo(item);
 
         return (
           <div className="flex items-center justify-center gap-1.5 md:gap-2 w-full">
@@ -169,6 +220,7 @@ export default function Table({
               </button>
             ) : (
               <>
+                {auditBtn}
                 <button
                   onClick={() => handleEditClick(item)}
                   className="p-1.5 bg-sky-100 text-sky-700 hover:bg-sky-200 dark:bg-sky-900/40 dark:text-sky-400 dark:hover:bg-sky-900/60 rounded transition-colors cursor-pointer"
@@ -188,6 +240,19 @@ export default function Table({
             )}
           </div>
         );
+      },
+    });
+  } else {
+    customColumns.push({
+      key: 'actions',
+      width: 'w-16',
+      sortable: false,
+      align: 'center',
+      label: translate('common.action'),
+      render: (item) => {
+        const auditBtn = renderAuditInfo(item);
+        if (!auditBtn) return <span className="text-slate-400 text-xs">-</span>;
+        return <div className="flex items-center justify-center w-full">{auditBtn}</div>;
       },
     });
   }

@@ -115,6 +115,22 @@ export default function SettingPage() {
 
       const filteredRoles = (rolesDb || []).filter((r) => !r.name.toLowerCase().includes('driver'));
 
+      const hubCounts = {};
+      (hubsDb?.allHub || []).forEach((h) => {
+        const u = h.updateBy || h.update_by;
+        if (u && u !== '-') {
+          hubCounts[u] = (hubCounts[u] || 0) + 1;
+        }
+      });
+      let majorityHubUpdateBy = '-';
+      let maxHubCount = 0;
+      Object.entries(hubCounts).forEach(([user, count]) => {
+        if (count > maxHubCount) {
+          maxHubCount = count;
+          majorityHubUpdateBy = user;
+        }
+      });
+
       setHubs(hubsDb);
       setRolesList(filteredRoles);
       setLastUpdated({
@@ -127,7 +143,8 @@ export default function SettingPage() {
         drivers: latestDriverSync,
       });
       setUpdatedBy({
-        hubs: hubsDb?.activeHub?.updateBy || '-',
+        hubs:
+          majorityHubUpdateBy !== '-' ? majorityHubUpdateBy : hubsDb?.activeHub?.updateBy || '-',
         roles: rolesDb?.[0]?.updateBy || '-',
         drivers: driverOrVehicleUpdateBy,
       });

@@ -45,9 +45,13 @@ export async function patchVehicles(updates, customUpdateBy) {
   });
 }
 
-export async function deleteVehicle({ id, vehicle_id, hubId }) {
+export async function deleteVehicle({ id, ids, vehicle_id, hubId }) {
   const params = new URLSearchParams();
-  if (id) params.append('id', id);
+  if (ids && Array.isArray(ids) && ids.length > 0) {
+    params.append('ids', ids.join(','));
+  } else if (id) {
+    params.append('id', id);
+  }
   if (vehicle_id) params.append('vehicle_id', vehicle_id);
   if (hubId) params.append('hubId', hubId);
   return await apiFetch(`/api/mileapp/vehicles?${params.toString()}`, 'Gagal menghapus kendaraan', {
@@ -105,7 +109,11 @@ export async function patchVehicleMceasy(activeHubId, storedLocationName, explic
     const vehicleKey = mcMatch.vehicleId || mcMatch.id;
     const isPlatMatch = mcPlat === vBasePlat;
 
-    const tmsDriver = v.driver_id ? driverMap.get(v.driver_id) : (v.driver_email ? driverMap.get(v.driver_email.toLowerCase().trim()) : null);
+    const tmsDriver = v.driver_id
+      ? driverMap.get(v.driver_id)
+      : v.driver_email
+        ? driverMap.get(v.driver_email.toLowerCase().trim())
+        : null;
     const tmsDriverVmsId = tmsDriver?.vms_id ? String(tmsDriver.vms_id) : null;
     const vmsDriverId = mcMatch.driverId ? String(mcMatch.driverId) : null;
     const isDriverMatch = !tmsDriverVmsId || vmsDriverId === tmsDriverVmsId;
@@ -228,11 +236,13 @@ export async function getVehicleStatus() {
 }
 
 // vehicle type
-export async function createVehicleType(name) {
+export async function createVehicleType(name, customUpdateBy) {
+  const { storedUser } = getLocalStorage();
+  const updateBy = customUpdateBy !== undefined ? customUpdateBy : storedUser?.name;
   return await apiFetch('/api/mileapp/vehicles/types', 'Gagal menambah tipe kendaraan', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ name }),
+    body: JSON.stringify({ name, updateBy }),
   });
 }
 
@@ -247,11 +257,13 @@ export async function getVehicleTypes() {
   );
 }
 
-export async function updateVehicleType(id, name) {
+export async function updateVehicleType(id, name, customUpdateBy) {
+  const { storedUser } = getLocalStorage();
+  const updateBy = customUpdateBy !== undefined ? customUpdateBy : storedUser?.name;
   return await apiFetch('/api/mileapp/vehicles/types', 'Gagal mengubah tipe kendaraan', {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ id, name }),
+    body: JSON.stringify({ id, name, updateBy }),
   });
 }
 

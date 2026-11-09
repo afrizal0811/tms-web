@@ -22,7 +22,7 @@ export const handleDownloadExcel = (processedData, setIsDownloading, selectedDat
       t('common.coord_new'),
       t('common.dist_diff'),
       t('common.driver'),
-      t('longlat.table.update_time'),
+      t('common.updated_time'),
     ];
     const sheetData = [headers];
 

@@ -48,14 +48,19 @@ export default function VehicleModal({ isOpen, unmappedData = [], onCompleted, t
         const types = typesObj?.allTypes || [];
         setVehicleTypes(types.map((v) => ({ label: v.name, value: v.name })));
 
-        const initial = {};
-        unmappedData.forEach((item) => {
-          initial[getItemKey(item)] = {
-            storage: formatStorage(item.storage),
-            type: formatType(item.type),
-          };
+        setSelections((prev) => {
+          const next = { ...prev };
+          unmappedData.forEach((item) => {
+            const key = getItemKey(item);
+            if (!next[key]) {
+              next[key] = {
+                storage: formatStorage(item.storage),
+                type: formatType(item.type),
+              };
+            }
+          });
+          return next;
         });
-        setSelections(initial);
       } catch (error) {
         toastError(t('common.toast.error', { err: error.message }), error);
       } finally {
@@ -263,6 +268,7 @@ export default function VehicleModal({ isOpen, unmappedData = [], onCompleted, t
 
       await configureVehicles(payload, storedLocation);
       toastSuccess(t('common.toast.success'));
+      window.dispatchEvent(new CustomEvent('tms-sync-vehicles-completed'));
 
       if (typeof onCompleted === 'function') {
         onCompleted();
@@ -319,7 +325,7 @@ export default function VehicleModal({ isOpen, unmappedData = [], onCompleted, t
       title={t('common.warning')}
       subtitle={t('common.modal.vehicle_subtitle')}
       maxWidth="max-w-2xl"
-      contentClassName="min-h-[500px] overflow-visible"
+      contentClassName="min-h-[500px]"
       bodyClassName="m-6 overflow-visible"
       footer={footerContent}
       noClose={true}

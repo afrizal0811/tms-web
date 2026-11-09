@@ -168,11 +168,15 @@ export async function GET(request) {
 
 export async function POST(request) {
   try {
-    const { name } = await request.json();
+    const { name, updateBy } = await request.json();
     if (!name) return NextResponse.json({ error: 'Nama tipe wajib diisi' }, { status: 400 });
 
     const newType = await prisma.vehicleType.create({
-      data: { name: name.toUpperCase() },
+      data: {
+        name: name.toUpperCase(),
+        created_by: updateBy || null,
+        updated_by: updateBy || null,
+      },
     });
     return NextResponse.json(
       { message: 'Tipe berhasil ditambahkan', data: newType },
@@ -191,12 +195,15 @@ export async function POST(request) {
 
 export async function PUT(request) {
   try {
-    const { id, name } = await request.json();
+    const { id, name, updateBy } = await request.json();
     if (!id || !name) return NextResponse.json({ error: 'Data tidak lengkap' }, { status: 400 });
 
     const updatedType = await prisma.vehicleType.update({
       where: { id: Number(id) },
-      data: { name: name.toUpperCase() },
+      data: {
+        name: name.toUpperCase(),
+        ...(updateBy ? { updated_by: updateBy } : {}),
+      },
     });
     return NextResponse.json(
       { message: 'Tipe berhasil diubah', data: updatedType },

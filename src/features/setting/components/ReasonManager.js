@@ -15,15 +15,9 @@ import CustomTable from './CustomTable';
 export default function ReasonManager({ reasons, onRefresh, isReadOnly, translate }) {
   const [newReason, setNewReason] = useState('');
   const [newPic, setNewPic] = useState('');
-  const [newCat, setNewCat] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [deleteConfig, setDeleteConfig] = useState({ isOpen: false, id: null, name: null });
-
-  const categoryOptions = useMemo(() => {
-    const set = new Set((reasons || []).map((r) => r.category?.trim()).filter(Boolean));
-    return Array.from(set).sort((a, b) => a.localeCompare(b));
-  }, [reasons]);
 
   const picOptions = useMemo(() => {
     const set = new Set((reasons || []).map((r) => r.pic?.trim()).filter(Boolean));
@@ -49,12 +43,12 @@ export default function ReasonManager({ reasons, onRefresh, isReadOnly, translat
   }, [reasons, searchQuery]);
 
   const handleAddReason = async () => {
-    if (!newReason.trim() || !newPic || !newCat || isReadOnly) return;
+    if (!newReason.trim() || !newPic || isReadOnly) return;
+    const resolvedCat = ['Customer', 'Other'].includes(newPic) ? 'External' : 'Internal';
     try {
-      await postReason(newReason, newPic, newCat);
+      await postReason(newReason, newPic, resolvedCat);
       setNewReason('');
       setNewPic('');
-      setNewCat('');
       setIsAddOpen(false);
       toastSuccess(translate('common.toast.success'));
       await onRefresh();
@@ -64,9 +58,10 @@ export default function ReasonManager({ reasons, onRefresh, isReadOnly, translat
   };
 
   const handleUpdateReason = async (id, editValues) => {
-    if (!editValues.reasons.trim() || !editValues.pic || !editValues.category || isReadOnly) return;
+    if (!editValues.reasons?.trim() || !editValues.pic || isReadOnly) return;
+    const resolvedCat = ['Customer', 'Other'].includes(editValues.pic) ? 'External' : 'Internal';
     try {
-      await updateReason(id, editValues.reasons, editValues.pic, editValues.category);
+      await updateReason(id, editValues.reasons, editValues.pic, resolvedCat);
       toastSuccess(translate('common.toast.success'));
       await onRefresh();
     } catch (e) {
@@ -116,16 +111,6 @@ export default function ReasonManager({ reasons, onRefresh, isReadOnly, translat
             <HighlightText text={item.category} highlight={searchQuery} />
           </span>
         ),
-        renderEdit: (value, onChange) => (
-          <Dropdown
-            options={categoryOptions.map((opt) => ({ label: opt, value: opt }))}
-            value={value}
-            onChange={onChange}
-            getLabel={(val) => val || '-'}
-            size="sm"
-            className="w-full min-w-0"
-          />
-        ),
       },
       {
         header: 'PIC',
@@ -136,11 +121,18 @@ export default function ReasonManager({ reasons, onRefresh, isReadOnly, translat
             <HighlightText text={item.pic} highlight={searchQuery} />
           </span>
         ),
-        renderEdit: (value, onChange) => (
+        renderEdit: (value, onChange, onSave, item, setValues) => (
           <Dropdown
             options={picOptions.map((opt) => ({ label: opt, value: opt }))}
             value={value}
-            onChange={onChange}
+            onChange={(selectedPic) => {
+              const autoCat = ['Customer', 'Other'].includes(selectedPic) ? 'External' : 'Internal';
+              if (typeof setValues === 'function') {
+                setValues({ pic: selectedPic, category: autoCat });
+              } else {
+                onChange(selectedPic);
+              }
+            }}
             getLabel={(val) => val || '-'}
             size="sm"
             className="w-full min-w-0"
@@ -167,7 +159,7 @@ export default function ReasonManager({ reasons, onRefresh, isReadOnly, translat
         ),
       },
     ],
-    [categoryOptions, picOptions, searchQuery, translate]
+    [picOptions, searchQuery, translate]
   );
   const msgParts = translate('common.modal.delete_message', { text: '|||' }).split('|||');
 
@@ -229,30 +221,20 @@ export default function ReasonManager({ reasons, onRefresh, isReadOnly, translat
           defaultOpen={false}
           className="mb-4"
         >
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-12 gap-2 w-full">
+          <div className="flex flex-col sm:flex-row gap-2 w-full">
             <input
               type="text"
               value={newReason}
               onChange={(e) => setNewReason(e.target.value)}
               onKeyDown={(e) => {
-                if (e.key === 'Enter' && newReason.trim() && newPic && newCat) {
+                if (e.key === 'Enter' && newReason.trim() && newPic) {
                   handleAddReason();
                 }
               }}
               placeholder={translate('setting.tab.general.add_placeholder')}
-              className="col-span-1 sm:col-span-2 md:col-span-5 min-w-0 w-full px-3 py-2 text-xs sm:text-sm text-slate-900 dark:text-slate-100 border border-gray-300 dark:border-slate-700 rounded-md outline-none focus:border-sky-500 dark:focus:border-slate-500 focus:ring-1 focus:ring-sky-500 dark:focus:ring-slate-500 bg-white dark:bg-slate-800"
+              className="flex-1 min-w-0 w-full px-3 py-2 text-xs sm:text-sm text-slate-900 dark:text-slate-100 border border-gray-300 dark:border-slate-700 rounded-md outline-none focus:border-sky-500 dark:focus:border-slate-500 focus:ring-1 focus:ring-sky-500 dark:focus:ring-slate-500 bg-white dark:bg-slate-800"
             />
-            <div className="col-span-1 sm:col-span-1 md:col-span-3 min-w-0 w-full">
-              <Dropdown
-                options={categoryOptions.map((opt) => ({ label: opt, value: opt }))}
-                value={newCat}
-                onChange={setNewCat}
-                getLabel={(val) => val || translate('setting.tab.general.select_category')}
-                size="md"
-                className="w-full min-w-0"
-              />
-            </div>
-            <div className="col-span-1 sm:col-span-1 md:col-span-3 min-w-0 w-full">
+            <div className="w-full sm:w-56 shrink-0 min-w-0">
               <Dropdown
                 options={picOptions.map((opt) => ({ label: opt, value: opt }))}
                 value={newPic}
@@ -262,13 +244,13 @@ export default function ReasonManager({ reasons, onRefresh, isReadOnly, translat
                 className="w-full min-w-0"
               />
             </div>
-            <div className="col-span-1 sm:col-span-2 md:col-span-1 min-w-0 w-full">
+            <div className="w-full sm:w-auto shrink-0">
               <Button
                 onClick={handleAddReason}
-                disabled={!newReason.trim() || !newPic || !newCat}
+                disabled={!newReason.trim() || !newPic}
                 size="md"
                 text={translate('common.button.btn_add')}
-                width="w-full h-full"
+                width="w-full sm:w-auto px-5"
               />
             </div>
           </div>

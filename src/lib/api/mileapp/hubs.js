@@ -11,7 +11,7 @@ export async function getHubs() {
 
 export async function postHubs(customUpdateBy) {
   const { storedUser } = getLocalStorage();
-  const updateBy = customUpdateBy !== undefined ? customUpdateBy : storedUser?.name;
+  const updateBy = customUpdateBy !== undefined ? customUpdateBy : storedUser?.name || 'System';
   return await apiFetch('/api/mileapp/hubs', 'Gagal sinkronisasi data hubs dengan vendor', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -19,10 +19,12 @@ export async function postHubs(customUpdateBy) {
   });
 }
 
-export async function patchHubs(id, data) {
+export async function patchHubs(id, data, customUpdateBy) {
+  const { storedUser } = getLocalStorage();
+  const updateBy = customUpdateBy !== undefined ? customUpdateBy : storedUser?.name || 'System';
   return await apiFetch('/api/mileapp/hubs', 'Gagal memperbarui pengaturan cabang', {
     method: 'PATCH',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ id, ...data }),
+    body: JSON.stringify({ id, updateBy, ...data }),
   });
 }

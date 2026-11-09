@@ -47,6 +47,18 @@ export default function VehicleManager({ vehicleTypes, isReadOnly, translate }) 
 
   useEffect(() => {
     if (activeHub?.hubId) loadVehicles();
+
+    const handleVehiclesUpdated = () => {
+      loadVehicles();
+    };
+
+    window.addEventListener('tms-sync-vehicles-completed', handleVehiclesUpdated);
+    window.addEventListener('tms-vehicle-configured', handleVehiclesUpdated);
+
+    return () => {
+      window.removeEventListener('tms-sync-vehicles-completed', handleVehiclesUpdated);
+      window.removeEventListener('tms-vehicle-configured', handleVehiclesUpdated);
+    };
   }, [activeHub, loadVehicles]);
 
   const vehicleTypeOptions = useMemo(
@@ -73,21 +85,27 @@ export default function VehicleManager({ vehicleTypes, isReadOnly, translate }) 
         _rawType: rawType,
       };
 
-      const existing = masterMap.get(base);
-      if (!existing) {
-        masterMap.set(base, vehicleItem);
-      } else if (cleanPlate === base) {
-        masterMap.set(base, {
-          ...vehicleItem,
-          type: vehicleItem.type || existing.type,
-          storage: vehicleItem.storage || existing.storage,
-        });
-      } else if (!existing.type || !existing.storage) {
-        masterMap.set(base, {
-          ...existing,
-          type: existing.type || vehicleItem.type,
-          storage: existing.storage || vehicleItem.storage,
-        });
+      const targetItem = masterMap.get(base);
+      if (!targetItem) {
+        masterMap.set(base, { ...vehicleItem, all_ids: [v.id] });
+      } else {
+        if (!targetItem.all_ids) targetItem.all_ids = [targetItem.id];
+        if (!targetItem.all_ids.includes(v.id)) targetItem.all_ids.push(v.id);
+
+        if (cleanPlate === base) {
+          masterMap.set(base, {
+            ...vehicleItem,
+            all_ids: targetItem.all_ids,
+            type: vehicleItem.type || targetItem.type,
+            storage: vehicleItem.storage || targetItem.storage,
+          });
+        } else if (!targetItem.type || !targetItem.storage) {
+          masterMap.set(base, {
+            ...targetItem,
+            type: targetItem.type || vehicleItem.type,
+            storage: targetItem.storage || vehicleItem.storage,
+          });
+        }
       }
     }
 
@@ -142,6 +160,7 @@ export default function VehicleManager({ vehicleTypes, isReadOnly, translate }) 
     try {
       const res = await deleteVehicle({
         id: targetItem.id,
+        ids: targetItem.all_ids || (targetItem.id ? [targetItem.id] : []),
         vehicle_id: targetItem.vehicle_id,
         hubId: activeHub.hubId,
       });

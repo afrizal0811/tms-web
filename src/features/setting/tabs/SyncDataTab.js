@@ -384,8 +384,12 @@ export default function SyncDataTab({
     if (isReadOnly) return;
     setSyncLoading(type);
     try {
-      if (type === 'hubs') await postHubs();
-      else if (type === 'roles') await postRoles();
+      if (type === 'hubs') {
+        const { storedUser } = getLocalStorage();
+        await postHubs(storedUser?.name);
+      } else if (type === 'roles') {
+        await postRoles();
+      }
 
       await handleSuccessReload();
     } catch (e) {

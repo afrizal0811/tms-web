@@ -17,6 +17,8 @@ export async function GET(request) {
       hasPartialRouting: hub.has_partial_routing || false,
       lat: hub.lat,
       lng: hub.lng,
+      createdAt: hub.created_at,
+      createdBy: hub.created_by,
       updatedAt: hub.updated_at,
       updateBy: hub.update_by,
       hasVms: hub.has_vms || false,
@@ -74,12 +76,22 @@ export async function POST(request) {
       throw new Error('Format data dari API Vendor tidak sesuai (bukan Array)');
     }
 
+    const existingHubs = await prisma.hub.findMany({
+      select: { id: true, created_by: true, created_at: true },
+    });
+    const existingHubMap = new Map(existingHubs.map((h) => [h.id, h]));
+
     const upsertPromises = hubsArray.map((hub) => {
       const lat = hub.lat ?? hub.latitude ?? hub.location?.lat ?? null;
       const lng = hub.lng ?? hub.longitude ?? hub.location?.lng ?? hub.location?.lon ?? null;
 
       const parsedLat = lat !== null && lat !== undefined ? parseFloat(lat) : null;
       const parsedLng = lng !== null && lng !== undefined ? parseFloat(lng) : null;
+      const now = new Date();
+      const existing = existingHubMap.get(String(hub._id));
+
+      const finalCreatedBy = existing?.created_by || updateBy || 'Admin';
+      const finalCreatedAt = existing?.created_at || now;
 
       return prisma.hub.upsert({
         where: { id: String(hub._id) },
@@ -88,13 +100,18 @@ export async function POST(request) {
           lat: parsedLat,
           lng: parsedLng,
           ...(updateBy ? { update_by: updateBy } : {}),
+          created_by: finalCreatedBy,
+          created_at: finalCreatedAt,
         },
         create: {
           id: String(hub._id),
           name: hub.name,
           lat: parsedLat,
           lng: parsedLng,
-          ...(updateBy ? { update_by: updateBy } : {}),
+          update_by: updateBy || 'Admin',
+          created_by: updateBy || 'Admin',
+          created_at: now,
+          updated_at: now,
         },
       });
     });
@@ -115,13 +132,26 @@ export async function POST(request) {
 export async function PATCH(req) {
   try {
     const body = await req.json();
-    const { id, acronym, hasPendingGR, hasPartialRouting, hasVms, isActive } = body;
+    const { id, acronym, hasPendingGR, hasPartialRouting, hasVms, isActive, updateBy } = body;
 
     if (!id) {
       return NextResponse.json({ error: 'ID Hub diperlukan' }, { status: 400 });
     }
 
+    const existingHub = await prisma.hub.findUnique({
+      where: { id: String(id) },
+      select: { created_by: true },
+    });
+
     const updateData = {};
+    if (updateBy) {
+      updateData.update_by = updateBy;
+      if (existingHub && !existingHub.created_by) {
+        updateData.created_by = updateBy;
+      }
+    } else if (existingHub && !existingHub.created_by) {
+      updateData.created_by = 'Admin';
+    }
     if (acronym !== undefined) {
       updateData.acronym = acronym && String(acronym).trim() !== '' ? String(acronym).trim() : null;
     }
@@ -151,6 +181,8 @@ export async function PATCH(req) {
       hasPartialRouting: updatedHub.has_partial_routing || false,
       lat: updatedHub.lat,
       lng: updatedHub.lng,
+      createdAt: updatedHub.created_at,
+      createdBy: updatedHub.created_by,
       updatedAt: updatedHub.updated_at,
       updateBy: updatedHub.update_by,
       hasVms: updatedHub.has_vms || false,

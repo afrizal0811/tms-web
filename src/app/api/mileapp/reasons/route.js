@@ -30,6 +30,8 @@ export async function POST(request) {
         reasons: body.reasons,
         pic: body.pic,
         category: body.category,
+        created_by: body.updateBy || null,
+        updated_by: body.updateBy || null,
       },
     });
 
@@ -65,6 +67,7 @@ export async function PUT(request) {
         reasons: body.reasons,
         pic: body.pic,
         category: body.category,
+        ...(body.updateBy ? { updated_by: body.updateBy } : {}),
       },
     });
 

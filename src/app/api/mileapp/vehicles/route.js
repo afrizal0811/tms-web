@@ -53,11 +53,7 @@ export async function GET(request) {
       const driverName = driver ? driver.name : '-';
       const driverEmail = driver ? driver.email : '';
       const basePlat = v.base_plate || getBasePlate(v.license_number);
-      const mappedTypeStr = v.type
-        ? v.storage
-          ? `${v.storage}-${v.type}`
-          : v.type
-        : null;
+      const mappedTypeStr = v.type ? (v.storage ? `${v.storage}-${v.type}` : v.type) : null;
 
       return {
         ...v,
@@ -143,7 +139,9 @@ export async function POST(request) {
 
           if (!existing) {
             const v =
-              (item.vendorVehicles || []).find((x) => String(x._id || x.id) === String(vehicleId)) ||
+              (item.vendorVehicles || []).find(
+                (x) => String(x._id || x.id) === String(vehicleId)
+              ) ||
               item.vendorData ||
               {};
             let driverId = null;
@@ -459,12 +457,29 @@ export async function DELETE(request) {
   try {
     const { searchParams } = new URL(request.url);
     const id = searchParams.get('id');
+    const ids = searchParams.get('ids');
     const vehicleId = searchParams.get('vehicle_id');
+
+    if (ids) {
+      const idList = ids
+        .split(',')
+        .map((s) => s.trim())
+        .filter(Boolean);
+      if (idList.length > 0) {
+        await prisma.vehicle.deleteMany({
+          where: { id: { in: idList } },
+        });
+        return NextResponse.json(
+          { success: true, message: 'Kendaraan berhasil dihapus' },
+          { status: 200 }
+        );
+      }
+    }
 
     const where = id ? { id } : vehicleId ? { vehicle_id: vehicleId } : null;
     if (!where) {
       return NextResponse.json(
-        { error: 'Parameter id atau vehicle_id diperlukan' },
+        { error: 'Parameter id, ids, atau vehicle_id diperlukan' },
         { status: 400 }
       );
     }

@@ -387,9 +387,6 @@ export const dictionary = {
       subtitle: 'Daftar pelanggan yang memerlukan',
       table_detail: '*Klik untuk melihat peta lokasi',
       title: 'Perbarui Longlat',
-      table: {
-        update_time: 'Waktu Pembaruan',
-      },
       modal: {
         no_coordinate: 'Tidak ada data koordinat untuk ditampilkan',
         times: 'kali',
@@ -1155,9 +1152,6 @@ export const dictionary = {
       subtitle: 'List of customers that require',
       table_detail: '*Click to view map location',
       title: 'Update Coordinates',
-      table: {
-        update_time: 'Update Time',
-      },
       modal: {
         times: 'time(s)',
         title: 'Location Update History',

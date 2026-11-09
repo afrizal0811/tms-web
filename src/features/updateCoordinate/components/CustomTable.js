@@ -136,7 +136,7 @@ export default function CustomTable({ data, historyMap, selectedDate, t, localeC
       width: 'w-[8%]',
       sortable: true,
       align: 'center',
-      label: t('longlat.table.update_time'),
+      label: t('common.updated_time'),
       render: (row) => <div className="text-center w-full">{row.updateTime}</div>,
     },
   ];
