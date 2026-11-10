@@ -10,6 +10,8 @@ import {
   parseCustomerString,
 } from '@/lib/utils';
 
+const INVALID_STRING_VALUES = new Set(['-', 'n/a', 'null', 'undefined']);
+
 const cleanPlat = (str) => {
   if (!str) return '';
   const base = getBasePlate(str) || str;
@@ -19,35 +21,15 @@ const cleanPlat = (str) => {
 const isValidPlate = (plate) => {
   if (!plate || typeof plate !== 'string') return false;
   const trimmed = plate.trim();
-  if (
-    !trimmed ||
-    trimmed === '-' ||
-    trimmed.toLowerCase() === 'n/a' ||
-    trimmed.toLowerCase() === 'null' ||
-    trimmed.toLowerCase() === 'undefined'
-  ) {
-    return false;
-  }
+  if (!trimmed || INVALID_STRING_VALUES.has(trimmed.toLowerCase())) return false;
   const clean = cleanPlat(trimmed);
-  if (!clean || clean === '-' || clean.includes('unknown') || clean.includes('demo')) {
-    return false;
-  }
-  return true;
+  return Boolean(clean && clean !== '-' && !clean.includes('unknown') && !clean.includes('demo'));
 };
 
 const isValidDriver = (driver) => {
   if (!driver || typeof driver !== 'string') return false;
   const trimmed = driver.trim();
-  if (
-    !trimmed ||
-    trimmed === '-' ||
-    trimmed.toLowerCase() === 'n/a' ||
-    trimmed.toLowerCase() === 'null' ||
-    trimmed.toLowerCase() === 'undefined'
-  ) {
-    return false;
-  }
-  return true;
+  return Boolean(trimmed && !INVALID_STRING_VALUES.has(trimmed.toLowerCase()));
 };
 
 const parseHistories = (histories) => {
@@ -61,6 +43,53 @@ const parseHistories = (histories) => {
   }
   return histories;
 };
+
+const checkStorageKeyword = (str) => {
+  if (!str) return null;
+  const u = String(str).toUpperCase();
+  if (u.includes('FROZEN') || u.includes('FRZ')) return 'frozen';
+  if (u.includes('DRY')) return 'dry';
+  return null;
+};
+
+const getTaskStorageType = (task, fallbackStorage = '') => {
+  if (!task) return 'dry';
+
+  const fromType = checkStorageKeyword(task.typeStorage || task.type_storage);
+  if (fromType) return fromType;
+
+  if (Array.isArray(task.tags)) {
+    for (const tag of task.tags) {
+      const fromTag = checkStorageKeyword(tag);
+      if (fromTag) return fromTag;
+    }
+  }
+
+  return (
+    checkStorageKeyword(task.others?.maksimumVehicleType) ||
+    checkStorageKeyword(fallbackStorage) ||
+    'dry'
+  );
+};
+
+const extractTaskEmail = (task) => {
+  if (!task) return '';
+  let raw = '';
+  if (task.assignee) {
+    raw = Array.isArray(task.assignee)
+      ? task.assignee[0]
+      : typeof task.assignee === 'string'
+        ? task.assignee.split(',')[0]
+        : task.assignee;
+  } else if (task.assignedTo?.email) {
+    raw = task.assignedTo.email;
+  } else if (task.email) {
+    raw = task.email;
+  }
+  return String(raw || '').toLowerCase().trim();
+};
+
+const sortByDriverName = (a, b) => (a.driverName || '').localeCompare(b.driverName || '');
 
 const createMetricCategory = () => ({
   dp: 0,
@@ -80,6 +109,45 @@ const createMetricCategory = () => ({
   pr_tasks: [],
   tv_details: [],
 });
+
+const transferLookbackMetrics = (prevM, currM) => {
+  ['dry', 'frozen'].forEach((type) => {
+    if (currM[type].dp === 0) {
+      currM[type].dp = prevM[type].dp;
+      currM[type].dp_tasks = [...prevM[type].dp_tasks];
+    }
+
+    currM[type].dt_total = prevM[type].dt_total;
+    currM[type].dt_sum = prevM[type].dt_sum;
+    currM[type].dt_hist = prevM[type].dt_hist;
+    currM[type].dt_tasks = [...prevM[type].dt_tasks];
+
+    currM[type].ma_total = prevM[type].ma_total;
+    currM[type].ma_hist = prevM[type].ma_hist;
+    currM[type].ma_tasks = [...prevM[type].ma_tasks];
+
+    if (currM[type].tv === 0) {
+      currM[type].tv = prevM[type].tv;
+      currM[type].va = prevM[type].va;
+      currM[type].tvu = prevM[type].tvu;
+      currM[type].tv_details = [...prevM[type].tv_details];
+    }
+
+    prevM[type].dp = 0;
+    prevM[type].dp_tasks = [];
+    prevM[type].dt_total = 0;
+    prevM[type].dt_sum = 0;
+    prevM[type].dt_hist = 0;
+    prevM[type].dt_tasks = [];
+    prevM[type].ma_total = 0;
+    prevM[type].ma_hist = 0;
+    prevM[type].ma_tasks = [];
+    prevM[type].tv = 0;
+    prevM[type].va = 0;
+    prevM[type].tvu = 0;
+    prevM[type].tv_details = [];
+  });
+};
 
 export async function calculateTaskSummaryMetrics({
   allTasks,
@@ -117,24 +185,36 @@ export async function calculateTaskSummaryMetrics({
   });
 
   const getTaskDetails = (tripRaw) => {
-    const rawName = tripRaw?.visitName || tripRaw?.name || '';
-    const fallback = () => {
-      const parsed = parseCustomerString(rawName);
-      return {
-        customerOrder: rawName,
-        customerName: parsed.name || t('common.no_data'),
-        flow: 'DELIVERY',
-      };
-    };
+    const rawName = tripRaw?.name || tripRaw?.visitName || '';
+    const rawId = tripRaw?.id || tripRaw?.visitId || '';
+    const cleanId = String(rawId)
+      .replace(/^taskId-/, '')
+      .replace(/_\d+$/, '')
+      .trim();
 
-    const visitId = tripRaw?.visitId || '';
-    if (!visitId || !visitId.includes('-')) {
-      return fallback();
+    const found =
+      (cleanId && (taskById.get(cleanId) || taskById.get(`taskId-${cleanId}`))) ||
+      (rawId && taskById.get(String(rawId)));
+
+    if (found) {
+      return {
+        ...found,
+        ...(tripRaw?.reason ? { reason: tripRaw.reason } : {}),
+      };
     }
 
-    const taskId = visitId.substring(visitId.indexOf('-') + 1);
-    const found = taskById.get(String(taskId));
-    return found || fallback();
+    const parsed = parseCustomerString(rawName);
+    return {
+      id: cleanId || rawId,
+      customerOrder: rawName,
+      customerName: parsed.name || rawName || t('common.no_data'),
+      flow: 'DELIVERY',
+      reason: tripRaw?.reason || '',
+      tags: tripRaw?.tags || [],
+      address: tripRaw?.address || '',
+      capacity: tripRaw?.capacity || null,
+      timeWindow: tripRaw?.timeWindow || null,
+    };
   };
 
   const driverMapStorage = {};
@@ -164,12 +244,9 @@ export async function calculateTaskSummaryMetrics({
 
       tempMetrics[dateKey].actual_tasks_count = (tempMetrics[dateKey].actual_tasks_count || 0) + 1;
 
-      const rawEmail = (Array.isArray(task.assignee) ? task.assignee[0] : task.assignee || '')
-        .toLowerCase()
-        .trim();
+      const rawEmail = extractTaskEmail(task);
       const storageFromDriver = driverMapStorage[rawEmail] || '';
-      const typeRaw = (task.typeStorage || storageFromDriver || '').toUpperCase();
-      const type = typeRaw.includes('FROZEN') ? 'frozen' : 'dry';
+      const type = getTaskStorageType(task, storageFromDriver);
 
       const sDeliv = task.statusDelivery;
       const statusArr = Array.isArray(sDeliv) ? sDeliv : [sDeliv];
@@ -205,13 +282,8 @@ export async function calculateTaskSummaryMetrics({
 
     initDate(dateKey);
 
-    const rName = (res.name || '').toUpperCase();
-    let routingType = 'dry';
-    if (rName.includes('FROZEN') || rName.includes('FRZ')) {
-      routingType = 'frozen';
-    } else if (rName.includes('DRY')) {
-      routingType = 'dry';
-    } else {
+    let routingType = checkStorageKeyword(res.name);
+    if (!routingType) {
       const plates = Array.from(
         new Set([
           ...Object.keys(res.totalDistance || {}),
@@ -221,22 +293,50 @@ export async function calculateTaskSummaryMetrics({
       );
       for (const plat of plates) {
         const foundDriver = driverByPlate.get(cleanPlat(plat));
-        const storage = (foundDriver?.storage || '').toUpperCase();
-        if (storage.includes('FROZEN') || storage.includes('FRZ')) {
+        const st = checkStorageKeyword(foundDriver?.storage);
+        if (st === 'frozen') {
           routingType = 'frozen';
           break;
         }
       }
     }
+    if (!routingType) routingType = 'dry';
 
-    const droppedCount = typeof res.dropped === 'number' ? res.dropped : 0;
-    tempMetrics[dateKey][routingType].dt_sum += droppedCount;
+    const droppedObj = res.dropped;
+    const droppedDataList = Array.isArray(droppedObj?.data) ? droppedObj.data : [];
+
+    if (droppedDataList.length > 0) {
+      droppedDataList.forEach((dropItem) => {
+        const taskDetail = getTaskDetails(dropItem);
+        const taskStorage = getTaskStorageType(
+          dropItem,
+          getTaskStorageType(taskDetail, routingType)
+        );
+        if (tempMetrics[dateKey]) {
+          tempMetrics[dateKey][taskStorage].dt_sum += 1;
+          tempMetrics[dateKey][taskStorage].dt_tasks.push({
+            ...taskDetail,
+            reason: dropItem.reason || taskDetail.reason,
+          });
+        }
+      });
+    } else {
+      const droppedCount =
+        typeof droppedObj === 'number'
+          ? droppedObj
+          : typeof droppedObj?.total === 'number'
+            ? droppedObj.total
+            : 0;
+      if (droppedCount > 0 && tempMetrics[dateKey]) {
+        tempMetrics[dateKey][routingType].dt_sum += droppedCount;
+      }
+    }
 
     const histData = parseHistories(res.histories);
     const histObj = histData?.history;
     if (histObj) {
       const h = Array.isArray(histObj) ? histObj[0] : histObj;
-      const manualList = Array.isArray(h?.manual) ? h.manual : (h?.manual?.data || []);
+      const manualList = Array.isArray(h?.manual) ? h.manual : h?.manual?.data || [];
 
       let histDry = 0;
       let histFrozen = 0;
@@ -248,15 +348,15 @@ export async function calculateTaskSummaryMetrics({
         const foundDriver = (fetchedDrivers || []).find(
           (d) => cleanPlat(d.plat) && vToClean.includes(cleanPlat(d.plat))
         );
-        const storage = foundDriver
-          ? (foundDriver.storage || '').toUpperCase()
-          : routingType.toUpperCase();
-        const isFrozen = storage.includes('FROZEN');
 
         (item.visits || []).forEach((v) => {
           const taskDetail = getTaskDetails(v);
+          const taskStorage = getTaskStorageType(
+            v,
+            getTaskStorageType(taskDetail, foundDriver?.storage || routingType)
+          );
 
-          if (isFrozen) {
+          if (taskStorage === 'frozen') {
             histFrozen += 1;
             histMaFrozen += 1;
             if (tempMetrics[dateKey]) {
@@ -352,12 +452,8 @@ export async function calculateTaskSummaryMetrics({
         });
       });
 
-      tempMetrics[dateKey].dry.tv_details.sort((a, b) =>
-        (a.driverName || '').localeCompare(b.driverName || '')
-      );
-      tempMetrics[dateKey].frozen.tv_details.sort((a, b) =>
-        (a.driverName || '').localeCompare(b.driverName || '')
-      );
+      tempMetrics[dateKey].dry.tv_details.sort(sortByDriverName);
+      tempMetrics[dateKey].frozen.tv_details.sort(sortByDriverName);
     }
 
     if (Array.isArray(allTasks)) {
@@ -375,8 +471,7 @@ export async function calculateTaskSummaryMetrics({
       tempMetrics[dateKey].frozen.tv_details = [];
       tempMetrics[dateKey].unknown.tv_details = [];
 
-      const isManual =
-        isManualMode || allTasks.some((t) => Boolean(t.typeStorage));
+      const isManual = isManualMode || allTasks.some((t) => Boolean(t.typeStorage));
 
       const dailyTaskVehicles = {
         dry: new Map(),
@@ -397,21 +492,7 @@ export async function calculateTaskSummaryMetrics({
             if (!isOngoing && !isDone) return;
           }
 
-          let rawEmail = '';
-          if (task.assignee) {
-            rawEmail =
-              typeof task.assignee === 'string'
-                ? task.assignee.split(',')[0].trim()
-                : Array.isArray(task.assignee)
-                  ? task.assignee[0]
-                  : task.assignee;
-          } else if (task.assignedTo && task.assignedTo.email) {
-            rawEmail = task.assignedTo.email;
-          } else if (task.email) {
-            rawEmail = task.email;
-          }
-          rawEmail = (rawEmail || '').toLowerCase().trim();
-
+          const rawEmail = extractTaskEmail(task);
           const strictBasePlate = (
             task.basePlat ||
             task.vehicleName ||
@@ -426,18 +507,7 @@ export async function calculateTaskSummaryMetrics({
             (baseCanonical && driverByPlate.get(baseCanonical)) ||
             null;
 
-          let type = 'dry';
-          if (isManual) {
-            const tStorage = (task.typeStorage || '').toUpperCase();
-            type = tStorage.includes('FROZEN') ? 'frozen' : 'dry';
-          } else {
-            const storage = foundDriver
-              ? (foundDriver.storage || 'DRY').toUpperCase()
-              : task.typeStorage
-                ? task.typeStorage.toUpperCase()
-                : 'DRY';
-            type = storage.includes('FROZEN') ? 'frozen' : 'dry';
-          }
+          const type = getTaskStorageType(task, foundDriver?.storage);
 
           const rawCust = task.customerOrder || task.customerName || task.title || '';
           const parsedCust = parseCustomerString(rawCust);
@@ -475,12 +545,7 @@ export async function calculateTaskSummaryMetrics({
             const canonicalPlate = cleanPlat(finalPlate);
             const displayPlate = getBasePlate(finalPlate) || finalPlate;
 
-            const vehicleType =
-              foundDriver && foundDriver.storage
-                ? foundDriver.storage.toUpperCase().includes('FROZEN')
-                  ? 'frozen'
-                  : 'dry'
-                : type;
+            const vehicleType = checkStorageKeyword(foundDriver?.storage) || type;
             const otherVehicleType = vehicleType === 'dry' ? 'frozen' : 'dry';
 
             if (dailyTaskVehicles[otherVehicleType].has(canonicalPlate)) {
@@ -510,9 +575,7 @@ export async function calculateTaskSummaryMetrics({
           driverName: v.driverName,
         }));
 
-        tempMetrics[dateKey][tKey].tv_details.sort((a, b) =>
-          (a.driverName || '').localeCompare(b.driverName || '')
-        );
+        tempMetrics[dateKey][tKey].tv_details.sort(sortByDriverName);
       });
     }
 
@@ -553,6 +616,13 @@ export async function calculateTaskSummaryMetrics({
     });
   });
 
+  const hasRouting = (metric) =>
+    Boolean(
+      (metric.routingNames && metric.routingNames.length > 0) ||
+        metric.dry.dt_sum > 0 ||
+        metric.frozen.dt_sum > 0
+    );
+
   const dateKeysSorted = Object.keys(tempMetrics).sort();
   const LOOKBACK_LIMIT = 3;
 
@@ -560,8 +630,7 @@ export async function calculateTaskSummaryMetrics({
     const currM = tempMetrics[currDateKey];
 
     const currHasExecutedTasks = (currM.actual_tasks_count || 0) > 0;
-    const currHasRouting =
-      currM.routingNames.length > 0 || currM.dry.dt_sum > 0 || currM.frozen.dt_sum > 0;
+    const currHasRouting = hasRouting(currM);
 
     if (currHasExecutedTasks && !currHasRouting) {
       for (let back = 1; back <= LOOKBACK_LIMIT; back++) {
@@ -572,49 +641,10 @@ export async function calculateTaskSummaryMetrics({
         const prevM = tempMetrics[prevDateKey];
         if (prevM) {
           const prevHasExecutedTasks = (prevM.actual_tasks_count || 0) > 0;
-          const prevHasRouting =
-            prevM.routingNames.length > 0 || prevM.dry.dt_sum > 0 || prevM.frozen.dt_sum > 0;
+          const prevHasRouting = hasRouting(prevM);
 
           if (prevHasRouting && !prevHasExecutedTasks) {
-            ['dry', 'frozen'].forEach((type) => {
-              if (currM[type].dp === 0) {
-                currM[type].dp = prevM[type].dp;
-                currM[type].dp_tasks = [...prevM[type].dp_tasks];
-              }
-
-              currM[type].dt_total = prevM[type].dt_total;
-              currM[type].dt_sum = prevM[type].dt_sum;
-              currM[type].dt_hist = prevM[type].dt_hist;
-              currM[type].dt_tasks = [...prevM[type].dt_tasks];
-
-              currM[type].ma_total = prevM[type].ma_total;
-              currM[type].ma_hist = prevM[type].ma_hist;
-              currM[type].ma_tasks = [...prevM[type].ma_tasks];
-
-              if (currM[type].tv === 0) {
-                currM[type].tv = prevM[type].tv;
-                currM[type].va = prevM[type].va;
-                currM[type].tvu = prevM[type].tvu;
-                currM[type].tv_details = [...prevM[type].tv_details];
-              }
-
-              prevM[type].dp = 0;
-              prevM[type].dp_tasks = [];
-
-              prevM[type].dt_total = 0;
-              prevM[type].dt_sum = 0;
-              prevM[type].dt_hist = 0;
-              prevM[type].dt_tasks = [];
-
-              prevM[type].ma_total = 0;
-              prevM[type].ma_hist = 0;
-              prevM[type].ma_tasks = [];
-
-              prevM[type].tv = 0;
-              prevM[type].va = 0;
-              prevM[type].tvu = 0;
-              prevM[type].tv_details = [];
-            });
+            transferLookbackMetrics(prevM, currM);
 
             prevM.routingNames.forEach((name) => {
               if (!currM.routingNames.includes(name)) currM.routingNames.push(name);

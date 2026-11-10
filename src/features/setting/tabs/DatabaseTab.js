@@ -210,7 +210,9 @@ export default function DatabaseTab({ hubId, hubName = '', dateRange = [], trans
         render: (row) => (
           <div className="flex justify-center text-center">
             <span className="text-xs font-medium text-slate-600 dark:text-slate-400">
-              {row.dropped ?? 0}
+              {typeof row.dropped === 'object' && row.dropped !== null
+                ? (row.dropped.total ?? 0)
+                : (row.dropped ?? 0)}
             </span>
           </div>
         ),

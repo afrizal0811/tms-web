@@ -97,7 +97,9 @@ export function buildDateWorkbook({
       r.id || '',
       r.name || '',
       r.deliveryDate || dateStr,
-      r.dropped ?? 0,
+      typeof r.dropped === 'object' && r.dropped !== null
+        ? (r.dropped.total ?? 0)
+        : (r.dropped ?? 0),
       totalHistories,
       r.sync_user?.created_by || r.createdBy || '',
       r.sync_user?.created_at || r.createdAt || '',
@@ -172,7 +174,10 @@ export function buildDateWorkbook({
   });
   const wsTask = createStyledSheet(
     [taskHeader, ...taskRows],
-    [6, 25, 18, 25, 35, 16, 12, 20, 14, 12, 20, 14, 14, 12, 12, 12, 12, 12, 12, 12, 10, 10, 18, 20, 18, 20],
+    [
+      6, 25, 18, 25, 35, 16, 12, 20, 14, 12, 20, 14, 14, 12, 12, 12, 12, 12, 12, 12, 10, 10, 18, 20,
+      18, 20,
+    ],
     [0, 5, 6, 8, 9, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 23, 25]
   );
 

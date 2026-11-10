@@ -624,7 +624,20 @@ export async function POST(request) {
         console.error(`Error fetching history for ${item._id}:`, histError);
       }
 
-      const droppedCount = Array.isArray(item.result?.dropped) ? item.result.dropped.length : 0;
+      const rawDropped = Array.isArray(item.result?.dropped) ? item.result.dropped : [];
+      const droppedCount = rawDropped.length;
+      const droppedData = {
+        total: droppedCount,
+        data: rawDropped.map((d) => ({
+          id: d.refId || (typeof d.id === 'string' ? d.id.replace(/_\d+$/, '') : d.id),
+          name: d.name || d.visitName || '',
+          tags: d.tags || [],
+          reason: d.reason || '',
+          address: d.address || '',
+          capacity: d.capacity ?? null,
+          timeWindow: d.timeWindow ?? null,
+        })),
+      };
 
       const nowIso = formatUTC7(new Date(), 'YYYY-MM-DDTHH:mm:ss');
       const existingRouting = await prisma.routingResult.findUnique({
@@ -646,7 +659,7 @@ export async function POST(request) {
         existingRouting &&
         existingRouting.hub_id === targetHubId &&
         existingRouting.name === (item.name || '') &&
-        existingRouting.dropped === droppedCount &&
+        JSON.stringify(existingRouting.dropped) === JSON.stringify(droppedData) &&
         JSON.stringify(existingRouting.total_distance) === JSON.stringify(totalDistanceMap) &&
         JSON.stringify(existingRouting.time) === JSON.stringify(timeMap) &&
         JSON.stringify(existingRouting.hub_times) === JSON.stringify(hubTimesMap) &&
@@ -678,7 +691,7 @@ export async function POST(request) {
         total_distance: totalDistanceMap,
         time: timeMap,
         hub_times: hubTimesMap,
-        dropped: droppedCount,
+        dropped: droppedData,
         histories: historiesData,
         sync_user: syncUser,
       };

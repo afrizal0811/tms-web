@@ -206,7 +206,7 @@ model RoutingResult {
   time               Json?    @default("{}")
   hub_times          Json?    @default("{}")
 
-  dropped            Int      @default(0)
+  dropped            Json?    @default("{\"total\": 0, \"data\": []}")
   histories          Json?
 
   sync_user          Json?
