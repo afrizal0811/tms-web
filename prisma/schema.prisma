@@ -230,7 +230,7 @@ model Task {
 
   status              String?
   status_delivery     String?
-  alasan              String?  @db.Text
+  reason              String?  @db.Text
 
   delivery_date       String
   start_time          String?

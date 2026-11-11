@@ -116,7 +116,7 @@ function formatDbTask(dbTask) {
     typeStorage: dbTask.type_storage,
     status: dbTask.status,
     statusDelivery: dbTask.status_delivery,
-    alasan: dbTask.alasan,
+    reason: dbTask.reason,
     deliveryDate: dbTask.delivery_date,
     startTime: dbTask.start_time,
     endTime: dbTask.end_time,
@@ -206,7 +206,7 @@ async function saveTasks(tasks, targetHubId, currentUser = 'System') {
             assigned_vehicle_id: true,
             arrival_time: true,
             done_time: true,
-            alasan: true,
+            reason: true,
             new_coordinate: true,
             done_coordinate: true,
             task_user: true,
@@ -328,7 +328,7 @@ async function saveTasks(tasks, targetHubId, currentUser = 'System') {
           (t.assignedVehicleId || null) !== (existingTask.assigned_vehicle_id || null) ||
           (t.klikJikaSudahSampai || null) !== (existingTask.arrival_time || null) ||
           (t.doneTime || null) !== (existingTask.done_time || null) ||
-          (t.alasan || null) !== (existingTask.alasan || null) ||
+          (t.reason || null) !== (existingTask.reason || null) ||
           (t.klikLokasiClient || null) !== (existingTask.new_coordinate || null) ||
           (t.doneCoordinate || null) !== (existingTask.done_coordinate || null);
 
@@ -357,7 +357,7 @@ async function saveTasks(tasks, targetHubId, currentUser = 'System') {
         type_storage: t.typeStorage || null,
         status: t.status || null,
         status_delivery: t.statusDelivery || null,
-        alasan: t.alasan || null,
+        reason: t.reason || null,
         delivery_date: deliveryDate,
         start_time: t.startTime || null,
         end_time: t.endTime || null,

@@ -155,7 +155,7 @@ export function routingActual({ tasks, drivers, dateStr }) {
       actualVisitTime: actualVisitMinutes,
       isManualAssign: !t.routePlannedOrder || t.routePlannedOrder === 0,
       isWithinHoursStatus: hoursStatus,
-      reason: t.alasan || '',
+      reason: t.reason || '',
       orderId: t.orderId || '',
       temperature: getStorageType(driverName),
       _id: t._id,

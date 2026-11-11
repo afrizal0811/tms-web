@@ -175,7 +175,7 @@ async function parseTaskFiles(files) {
       to: getColIdx(headers, 'assignedto'),
       veh: getColIdx(headers, 'assignedvehicle'),
       gr: getColIdx(headers, 'statusgr'),
-      alasan: getColIdx(headers, 'alasan'),
+      reason: getColIdx(headers, 'reason'),
       order: getColIdx(headers, 'customerorder'),
       storage: getColIdx(headers, 'typestorage'),
       deliv: getColIdx(headers, 'statusdelivery'),
@@ -214,7 +214,7 @@ async function parseTaskFiles(files) {
           customerOrder: c.order !== -1 ? cleanStr(r[c.order]) || '-' : '-',
           statusDelivery: c.deliv !== -1 ? cleanStr(r[c.deliv]) : '',
           statusGr: c.gr !== -1 ? cleanStr(r[c.gr]) : '',
-          alasan: c.alasan !== -1 ? cleanStr(r[c.alasan]) || '-' : '-',
+          reason: c.reason !== -1 ? cleanStr(r[c.reason]) || '-' : '-',
           gpsSesuai: c.gps !== -1 ? cleanStr(r[c.gps]) : '',
         });
       });

@@ -422,9 +422,9 @@ function DataTab({ taskData, pendingDetail, goToMapTab, translate }) {
     showReason = true;
     reasonValue = activePendingDetail.detailReason || activePendingDetail.groupReason || '-';
     isReasonRed = true;
-  } else if (taskData.alasan || activePendingDetail?.detailReason) {
+  } else if (taskData.reason || activePendingDetail?.detailReason) {
     showReason = true;
-    reasonValue = taskData.alasan || activePendingDetail?.detailReason || '-';
+    reasonValue = taskData.reason || activePendingDetail?.detailReason || '-';
     isReasonRed = false;
   }
 

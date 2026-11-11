@@ -53,7 +53,7 @@ export async function parseDeliveryToTasks(deliveryBuffers) {
           getVal('Type Storage (typeStorage)') ||
           getVal('Type Storage') ||
           getVal('Type Storage_1'),
-        alasan: getVal('Alasan') || getVal('Alasan Tidak Tercapai') || getVal('Alasan Batal'),
+        reason: getVal('Reason'),
         driverName:
           getVal('driverName') ||
           getVal('Driver Name') ||

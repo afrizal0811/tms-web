@@ -590,7 +590,7 @@ export default function PendingReasonModal({
               <input
                 type="text"
                 readOnly
-                value={currentItem.alasan || currentItem.reason || ''}
+                value={currentItem.reason || ''}
                 placeholder={translate('summary.tabs.pending_reasons.reason')}
                 className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 bg-gray-100 dark:bg-slate-700/50 text-slate-600 dark:text-slate-300 rounded-md outline-none cursor-not-allowed text-sm"
               />

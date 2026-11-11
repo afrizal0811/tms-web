@@ -273,8 +273,8 @@ export function generatePendingReasonSheet(
         ((isOrigSuccess && !isCurrentSuccess) || (!isOrigSuccess && isCurrentSuccess))
     );
     const displayReason = isConvertedStatus
-      ? pd.detailReason || item.alasan || '-'
-      : item.alasan || '-';
+      ? pd.detailReason || item.reason || '-'
+      : item.reason || '-';
 
     const row = [
       item.flow || '-',

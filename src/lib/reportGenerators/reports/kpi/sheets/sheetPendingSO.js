@@ -53,9 +53,9 @@ export function generateSheetPendingSO(tasksData, driverData, fallbackDate = nul
       const displayDate = rawDate ? formatDateUniversal(rawDate, 'DD-MM-YYYY') : '-';
 
       const detailText = pd?.detailReason ? String(pd.detailReason).trim() : '';
-      const alasan = detailText || task.alasan || '-';
+      const reason = detailText || task.reason || '-';
       const hasPendingDetail = hasFilledPendingDetail(pd);
-      const isReasonEmpty = !hasPendingDetail || !alasan || alasan === '-' || alasan.trim() === '';
+      const isReasonEmpty = !hasPendingDetail || !reason || reason === '-' || reason.trim() === '';
 
       if (isReasonEmpty) {
         incompleteDates.add(sortDate);
@@ -69,7 +69,7 @@ export function generateSheetPendingSO(tasksData, driverData, fallbackDate = nul
           finalDriver,
           custInfo.fullCustomerName || custInfo.name || '-',
           custInfo.invoiceNumber || '-',
-          alasan,
+          reason,
         ],
         isReasonEmpty,
         sortDate,
@@ -92,11 +92,11 @@ export function generateSheetPendingSO(tasksData, driverData, fallbackDate = nul
   });
 
   const sheetData = [
-    ['Tanggal', 'Flow', 'Plat Nomor', 'Driver', 'Customer', 'Nomor Faktur', 'Alasan'],
+    ['Tanggal', 'Flow', 'Plat Nomor', 'Driver', 'Customer', 'Nomor Faktur', 'Reason'],
     ...pendingRows.map((p) => p.row),
     [],
     ['NOTE'],
-    ['', 'data detail alasan pending belum lengkap'],
+    ['', 'data detail reason pending belum lengkap'],
   ];
 
   const ws = XLSX.utils.aoa_to_sheet(sheetData);

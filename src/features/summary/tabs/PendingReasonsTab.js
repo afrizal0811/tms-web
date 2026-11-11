@@ -679,8 +679,8 @@ export default function PendingReasonsTab({
                 });
 
               const reasonValue = isAmberRow
-                ? pd.detailReason || item.alasan || '-'
-                : item.alasan || '-';
+                ? pd.detailReason || item.reason || '-'
+                : item.reason || '-';
 
               return (
                 <tr
