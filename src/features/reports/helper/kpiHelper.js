@@ -1,16 +1,11 @@
-import { getLocationHistories, getResults, getTasks, getPendingDetails } from '@/lib/api/mileapp';
+import { getKpiData, getLocationHistories, getPendingDetails, getTasks } from '@/lib/api/mileapp';
 import { applyPendingDetailsToTasks } from '@/lib/deliveryStatus';
+import { getLocalStorage } from '@/lib/localStorageHandler';
 import { convertLocationHistories } from '@/lib/reportGenerators/helper';
-import { generateKpiWorkbook } from '@/lib/reportGenerators/reports';
+import { generateKpiWorkbook, generateManualKpiWorkbook } from '@/lib/reportGenerators/reports';
 import { toastError, toastSuccess, toastWarning } from '@/lib/toast';
-import {
-  calculateStartFinishDates,
-  formatDateUniversal,
-  isEmpty,
-  toApiDateString,
-} from '@/lib/utils';
+import { calculateStartFinishDates, formatDateUniversal, isEmpty } from '@/lib/utils';
 import * as XLSX from 'xlsx-js-style';
-import { bulkZipDownloader } from './help';
 
 const cleanStr = (str) => String(str || '').trim();
 const normalizeStr = (str) =>
@@ -32,65 +27,64 @@ const getColIdx = (headers, keyword) => {
   return headers.findIndex((h) => h && normalizeStr(h).includes(kw));
 };
 
-const evaluateRoutingValidity = (results) => {
-  if (isEmpty(results)) return [];
-  return results
-    .filter((item) => item.name && item.name !== '-')
-    .map((i) => i._id || i.id);
-};
-const processSingleKpiDate = async (
-  targetDateObj,
-  drivers,
-  hubAcronym,
-  customRoutingDateObj = null
-) => {
-  const validDeliveryDate = new Date(targetDateObj);
-  const dateString = formatDateUniversal(validDeliveryDate);
-  const routingDeliveryDate = customRoutingDateObj
-    ? formatDateUniversal(new Date(customRoutingDateObj))
-    : dateString;
-  const startObj = new Date(validDeliveryDate);
-  startObj.setHours(0, 0, 0, 0);
-  const timeFrom = toApiDateString(startObj);
-  const timeTo = toApiDateString(new Date(startObj.setHours(23, 59, 59)));
-  const { timeFrom: histFrom, timeTo: histTo } = calculateStartFinishDates(dateString);
+function finalizeWorkbookDownload({ wb, fileName, hasIncompletePending, t }) {
+  if (hasIncompletePending) {
+    toastWarning(t('report.toast.incomplete_detail'));
+    return;
+  }
+  XLSX.writeFile(wb, fileName);
+  toastSuccess(t('common.toast.success'));
+}
 
-  const [tasks, rawResults, histories, pendingDetails] = await Promise.all([
+async function downloadDbKpiReport({ startDateStr, endDateStr, hubAcronym, drivers, t }) {
+  const { storedLocation, storedLocationAcronym, storedLocationName } = getLocalStorage();
+  const hubId = storedLocation;
+  const hubLabel = hubAcronym || storedLocationAcronym || storedLocationName || '';
+  const isSingle = startDateStr === endDateStr;
+
+  const kpiParams = isSingle
+    ? { hubId, date: startDateStr }
+    : { hubId, dateFrom: startDateStr, dateTo: endDateStr };
+
+  const [kpiRes, tasksRes, pendingDetailsRes] = await Promise.all([
+    getKpiData(kpiParams),
     getTasks({
-      status: 'DONE,ONGOING',
-      timeFrom,
-      timeTo,
-    }),
-    getResults({
-      deliveryDate: routingDeliveryDate,
-    }),
-    getLocationHistories({
-      date: dateString,
-      timeFrom: histFrom,
-      timeTo: histTo,
-    }),
-    getPendingDetails(dateString, dateString).catch(() => []),
+      dateFrom: startDateStr,
+      dateTo: endDateStr,
+      isShowAll: !hubId || hubId === 'all',
+    }).catch(() => []),
+    getPendingDetails(startDateStr, endDateStr).catch(() => []),
   ]);
 
-  const rawTaskList = tasks?.data || tasks?.tasks?.data || tasks || [];
-  const taskList = applyPendingDetailsToTasks(rawTaskList, pendingDetails);
-  const validRoutingIds = new Set(evaluateRoutingValidity(rawResults || []));
-  const filteredResults = (rawResults || []).filter((r) => validRoutingIds.has(r._id));
-
-  const singleDateHistories = (histories || []).filter((item) => {
-    return item.startTime?.startsWith(dateString);
-  });
-  const { kpiHistories } = convertLocationHistories(singleDateHistories, drivers);
-
-  return generateKpiWorkbook(
-    dateString,
-    hubAcronym,
-    drivers,
-    filteredResults,
-    taskList,
-    kpiHistories
+  const rawKpi = Array.isArray(kpiRes) ? kpiRes : kpiRes?.data || [];
+  const kpiRecords = [...rawKpi].sort((a, b) =>
+    String(a.date || '').localeCompare(String(b.date || ''))
   );
-};
+
+  const rawTasks = Array.isArray(tasksRes) ? tasksRes : tasksRes?.data || [];
+  const pendingList = Array.isArray(pendingDetailsRes)
+    ? pendingDetailsRes
+    : pendingDetailsRes?.data || [];
+  const taskList = applyPendingDetailsToTasks(rawTasks, pendingList);
+
+  const { wb, hasKpiRows, hasIncompletePending } = generateKpiWorkbook({
+    kpiRecords,
+    tasksData: taskList,
+    driverData: drivers,
+    fallbackDate: startDateStr,
+  });
+
+  if (!hasKpiRows && !hasIncompletePending) {
+    throw new Error(t('common.no_data'));
+  }
+
+  const startFile = formatDateUniversal(startDateStr, 'DD.MM.YYYY');
+  const endFile = formatDateUniversal(endDateStr, 'DD.MM.YYYY');
+  const datePart = isSingle ? startFile : `(${startFile} - ${endFile})`;
+  const fileName = hubLabel ? `KPI - ${datePart} - ${hubLabel}.xlsx` : `KPI - ${datePart}.xlsx`;
+
+  finalizeWorkbookDownload({ wb, fileName, hasIncompletePending, t });
+}
 
 async function parseRoutingFiles(files) {
   const resultsData = [];
@@ -230,10 +224,10 @@ async function parseTaskFiles(files) {
   return { tasks: parsedTasks, majorityDate };
 }
 
-const executeManualKpiDownload = async ({ routingFiles, taskFiles, hubAcronym, drivers }) => {
-  let routing = [],
-    tasks = [],
-    dateStr = null;
+const executeManualKpiDownload = async ({ routingFiles, taskFiles, hubAcronym, drivers, t }) => {
+  let routing = [];
+  let tasks = [];
+  let dateStr = null;
 
   if (!isEmpty(routingFiles)) {
     try {
@@ -253,11 +247,11 @@ const executeManualKpiDownload = async ({ routingFiles, taskFiles, hubAcronym, d
     }
   }
 
-  if (!dateStr)
+  if (!dateStr) {
     throw new Error('Tidak dapat mendeteksi tanggal pengiriman dari kolom startTime di file Task.');
+  }
 
-  const dateObj = new Date(dateStr);
-  const formattedDate = formatDateUniversal(dateObj);
+  const formattedDate = formatDateUniversal(dateStr, 'YYYY-MM-DD');
   const { timeFrom, timeTo } = calculateStartFinishDates(formattedDate);
 
   const [histories, pendingDetails] = await Promise.all([
@@ -269,32 +263,27 @@ const executeManualKpiDownload = async ({ routingFiles, taskFiles, hubAcronym, d
     getPendingDetails(formattedDate, formattedDate).catch(() => []),
   ]);
 
-  const singleDateHistories = (histories || []).filter((item) => {
-    return item.startTime?.startsWith(formattedDate);
-  });
+  const singleDateHistories = (histories || []).filter(
+    (item) => item.date === formattedDate || item.startTime?.startsWith(formattedDate)
+  );
   const { kpiHistories: historiesData } = convertLocationHistories(singleDateHistories, drivers);
   const effectiveTasks = applyPendingDetailsToTasks(tasks, pendingDetails);
-  const { wb } = generateKpiWorkbook(
-    formattedDate,
-    hubAcronym,
-    drivers,
-    routing,
-    effectiveTasks,
-    historiesData
-  );
 
-  XLSX.writeFile(
-    wb,
-    `Manual KPI - ${formatDateUniversal(dateObj, 'DD.MM.YYYY')} - ${hubAcronym}.xlsx`
-  );
-  toastSuccess('File berhasil diunduh');
+  const { wb, fileName, hasIncompletePending } = generateManualKpiWorkbook({
+    selectedDate: formattedDate,
+    locationName: hubAcronym,
+    driverData: drivers,
+    resultsData: routing,
+    tasksData: effectiveTasks,
+    historiesData,
+  });
+
+  finalizeWorkbookDownload({ wb, fileName, hasIncompletePending, t });
 };
 
 export const handleSingleDownload = async ({
   hubAcronym,
   selectedDate,
-  isCustomRouting,
-  routingDate,
   driverData,
   setIsLoading,
   t,
@@ -302,17 +291,16 @@ export const handleSingleDownload = async ({
   try {
     setIsLoading(true);
     if (!selectedDate) throw new Error(t('common.invalid_date'));
+    const dateStr = formatDateUniversal(selectedDate, 'YYYY-MM-DD');
+    if (!dateStr || dateStr === '-') throw new Error(t('common.invalid_date'));
 
-    const { wb, fileName, hasError } = await processSingleKpiDate(
-      selectedDate,
-      driverData,
+    await downloadDbKpiReport({
+      startDateStr: dateStr,
+      endDateStr: dateStr,
       hubAcronym,
-      isCustomRouting ? routingDate : null
-    );
-
-    XLSX.writeFile(wb, fileName);
-    if (hasError) toastWarning('Terdapat data yang hilang. Periksa sheet Error Data!');
-    toastSuccess(t('common.toast.success'));
+      drivers: driverData,
+      t,
+    });
   } catch (err) {
     toastError(t('common.toast.error', { err: err.message }), err);
   } finally {
@@ -329,29 +317,29 @@ export const handleBulkDownload = async ({
   t,
 }) => {
   try {
-    if (!startDate || !endDate)
+    setIsLoading(true);
+    if (!startDate || !endDate) {
       throw new Error(t('common.invalid_date') || 'Silahkan pilih rentang tanggal!');
-    if (endDate < startDate) throw new Error('Tanggal akhir tidak boleh kurang dari tanggal awal.');
+    }
 
-    await bulkZipDownloader({
-      startDate,
-      endDate,
-      driverData,
-      zipPrefix: `${t('report.kpi_report')} (${t('common.bulk')})`,
-      setIsLoading,
-      processDateCallback: async ({ dateObj }) => {
-        const { wb, fileName, hasError } = await processSingleKpiDate(
-          dateObj,
-          driverData,
-          hubAcronym
-        );
-        if (hasError) toastWarning(`Data tidak lengkap untuk ${formatDateUniversal(dateObj)}`);
-        return { wb, excelFileName: fileName };
-      },
+    const startDateStr = formatDateUniversal(startDate, 'YYYY-MM-DD');
+    const endDateStr = formatDateUniversal(endDate, 'YYYY-MM-DD');
+    if (startDateStr === '-' || endDateStr === '-') throw new Error(t('common.invalid_date'));
+    if (endDateStr < startDateStr) {
+      throw new Error('Tanggal akhir tidak boleh kurang dari tanggal awal.');
+    }
+
+    await downloadDbKpiReport({
+      startDateStr,
+      endDateStr,
+      hubAcronym,
+      drivers: driverData,
       t,
     });
   } catch (err) {
     toastError(t('common.toast.error', { err: err.message }), err);
+  } finally {
+    setIsLoading(false);
   }
 };
 
@@ -373,6 +361,7 @@ export const handleManualDownload = async ({
       taskFiles: selectedDeliveryFiles,
       hubAcronym,
       drivers: driverData,
+      t,
     });
 
     setIsModalOpen(false);

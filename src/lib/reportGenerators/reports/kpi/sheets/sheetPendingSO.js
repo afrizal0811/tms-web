@@ -11,86 +11,88 @@ import {
 } from '@/lib/utils';
 import * as XLSX from 'xlsx-js-style';
 
-export function generateSheetPendingSO(tasksData, driverData) {
-  const pendingRows = [];
+function hasFilledPendingDetail(pd) {
+  if (!pd) return false;
+  const fields = [pd.detailReason, pd.groupReason, pd.pic, pd.internalExternal];
+  return fields.some((val) => val && String(val).trim() !== '' && String(val).trim() !== '-');
+}
+
+export function generateSheetPendingSO(tasksData, driverData, fallbackDate = null) {
+  const allPendingRows = [];
+  const incompleteDates = new Set();
 
   if (Array.isArray(tasksData)) {
     tasksData.forEach((task) => {
       if (isTaskUnassigned(task)) return;
       const pd = task.pendingDetail;
       const effectiveStatus = pd?.new_status || task.statusDelivery || task.status;
-      const norm = normalizeDeliveryStatus(effectiveStatus);
-      const isPending = norm === DELIVERY_STATUS_KEYS.PENDING;
+      if (normalizeDeliveryStatus(effectiveStatus) !== DELIVERY_STATUS_KEYS.PENDING) return;
 
-      if (isPending) {
-        let driverName = task.driverName;
-        let rawAssignee = '';
-        if (task.assignee) {
-          rawAssignee =
-            typeof task.assignee === 'string' ? task.assignee.split(',')[0].trim() : task.assignee;
-        }
-        const email = normalizeEmail(rawAssignee);
+      const driverName = task.driverName;
+      const rawAssignee = task.assignee
+        ? typeof task.assignee === 'string'
+          ? task.assignee.split(',')[0].trim()
+          : task.assignee
+        : '';
+      const email = normalizeEmail(rawAssignee);
 
-        const driverInfo = (driverData || []).find(
-          (d) =>
-            (email && normalizeEmail(d.email) === email) ||
-            (driverName && d.name && d.name.toUpperCase() === driverName.toUpperCase())
-        );
+      const driverInfo = (driverData || []).find(
+        (d) =>
+          (email && normalizeEmail(d.email) === email) ||
+          (driverName && d.name && d.name.toUpperCase() === driverName.toUpperCase())
+      );
 
-        let rawPlat = driverInfo?.plat || task.basePlat || task.vehicleName || task.plat || '-';
-        const finalPlat = getBasePlate(rawPlat);
-        const finalDriver = driverInfo?.name || driverName || rawAssignee || '-';
-        const custInfo = parseCustomerString(task.customerOrder || '');
+      const rawPlat = driverInfo?.plat || task.basePlat || task.vehicleName || task.plat || '-';
+      const finalPlat = getBasePlate(rawPlat);
+      const finalDriver = driverInfo?.name || driverName || rawAssignee || '-';
+      const custInfo = parseCustomerString(task.customerOrder || '');
 
-        let formattedStartTime = '-';
-        if (task.startTime) {
-          formattedStartTime = formatDateUniversal(task.startTime);
-        }
+      const rawDate = task.deliveryDate || task.delivery_date || task.startTime || fallbackDate;
+      const sortDateRaw = rawDate ? formatDateUniversal(rawDate, 'YYYY-MM-DD') : '';
+      const sortDate = sortDateRaw && sortDateRaw !== '-' ? sortDateRaw : '';
+      const displayDate = rawDate ? formatDateUniversal(rawDate, 'DD-MM-YYYY') : '-';
 
-        const alasan =
-          task.pendingDetail?.detailReason && task.pendingDetail.detailReason.trim() !== ''
-            ? task.pendingDetail.detailReason
-            : task.alasan || '-';
+      const detailText = pd?.detailReason ? String(pd.detailReason).trim() : '';
+      const alasan = detailText || task.alasan || '-';
+      const hasPendingDetail = hasFilledPendingDetail(pd);
+      const isReasonEmpty = !hasPendingDetail || !alasan || alasan === '-' || alasan.trim() === '';
 
-        const pd = task.pendingDetail;
-        const hasPendingDetail = Boolean(
-          pd &&
-            ((pd.detailReason && pd.detailReason.trim() !== '' && pd.detailReason !== '-') ||
-              (pd.groupReason && pd.groupReason.trim() !== '' && pd.groupReason !== '-') ||
-              (pd.pic && pd.pic.trim() !== '' && pd.pic !== '-') ||
-              (pd.internalExternal &&
-                pd.internalExternal.trim() !== '' &&
-                pd.internalExternal !== '-'))
-        );
-
-        const isReasonEmpty =
-          !hasPendingDetail || !alasan || alasan === '-' || alasan.trim() === '';
-
-        pendingRows.push({
-          row: [
-            task.flow || '-',
-            formattedStartTime,
-            finalPlat,
-            finalDriver,
-            custInfo.fullCustomerName || custInfo.name || '-',
-            custInfo.invoiceNumber || '-',
-            alasan,
-          ],
-          isReasonEmpty,
-          driver: finalDriver,
-        });
+      if (isReasonEmpty) {
+        incompleteDates.add(sortDate);
       }
+
+      allPendingRows.push({
+        row: [
+          displayDate,
+          task.flow || '-',
+          finalPlat,
+          finalDriver,
+          custInfo.fullCustomerName || custInfo.name || '-',
+          custInfo.invoiceNumber || '-',
+          alasan,
+        ],
+        isReasonEmpty,
+        sortDate,
+        driver: finalDriver,
+      });
     });
   }
 
-  pendingRows.sort((a, b) =>
-    String(a.driver || '')
+  const pendingRows = allPendingRows.filter((r) => incompleteDates.has(r.sortDate));
+  if (pendingRows.length === 0) {
+    return { ws: null, incompleteDates };
+  }
+
+  pendingRows.sort((a, b) => {
+    const dateCmp = String(a.sortDate).localeCompare(String(b.sortDate));
+    if (dateCmp !== 0) return dateCmp;
+    return String(a.driver || '')
       .toUpperCase()
-      .localeCompare(String(b.driver || '').toUpperCase())
-  );
+      .localeCompare(String(b.driver || '').toUpperCase());
+  });
 
   const sheetData = [
-    ['Flow', 'Tanggal', 'Plat Nomor', 'Driver', 'Customer', 'Nomor Faktur', 'Alasan'],
+    ['Tanggal', 'Flow', 'Plat Nomor', 'Driver', 'Customer', 'Nomor Faktur', 'Alasan'],
     ...pendingRows.map((p) => p.row),
     [],
     ['NOTE'],
@@ -171,5 +173,5 @@ export function generateSheetPendingSO(tasksData, driverData) {
     { wch: 35 },
   ];
 
-  return ws;
+  return { ws, incompleteDates };
 }

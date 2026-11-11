@@ -311,6 +311,8 @@ export const dictionary = {
       toast: {
         duplicate_file: 'File sudah diunggah, silakan pilih file yang berbeda',
         failed_zip: 'Gagal membuat file zip',
+        incomplete_detail:
+          'Terdapat tugas pending yang belum ditentukan kategori dan alasan. Lengkapi datanya!',
         invalid_file: '{fileName} gagal diunggah. Gunakan berkas yang benar!',
         select_date: 'Pilih tanggal pengiriman',
         skip_data: '{skippedDates} tanggal tidak memiliki data',
@@ -1075,6 +1077,8 @@ export const dictionary = {
       toast: {
         duplicate_file: 'File already uploaded, please select a different file',
         failed_zip: 'Failed to create ZIP file',
+        incomplete_detail:
+          'There are pending tasks with no assigned category or reason. Please complete the missing information!',
         invalid_file: '{fileName} failed to upload. Please use a valid file!',
         select_date: 'Select delivery date',
         skip_data: '{skippedDates} dates have no data',

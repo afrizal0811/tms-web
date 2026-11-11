@@ -19,15 +19,13 @@ export default function KpiReport({
   const [selectedMode, setSelectedMode] = useState({
     bulk: false,
     manual: false,
-    custom: false,
   });
-  const { bulk: isBulkMode, manual: isManualMode, custom: isCustomRouting } = selectedMode;
+  const { bulk: isBulkMode, manual: isManualMode } = selectedMode;
   const [selectedRoutingFiles, setSelectedRoutingFiles] = useState([]);
   const [selectedDeliveryFiles, setSelectedDeliveryFiles] = useState([]);
 
   const initialDate = formatDateUniversal(new Date());
   const [selectedDate, setSelectedDate] = useState(initialDate);
-  const [routingDate, setRoutingDate] = useState(initialDate);
   const [startDate, setStartDate] = useState(initialDate);
   const [endDate, setEndDate] = useState(initialDate);
 
@@ -35,8 +33,6 @@ export default function KpiReport({
     handleSingleDownload({
       hubAcronym,
       selectedDate,
-      isCustomRouting,
-      routingDate,
       driverData,
       setIsLoading,
       t,
@@ -55,9 +51,6 @@ export default function KpiReport({
   const triggerManualDownload = () =>
     handleManualDownload({
       hubAcronym,
-      selectedDate,
-      isCustomRouting,
-      routingDate,
       selectedRoutingFiles,
       selectedDeliveryFiles,
       driverData,
@@ -69,11 +62,11 @@ export default function KpiReport({
     });
 
   const handleAction = () => {
-    if (isEmpty(driverData)) {
-      toastError(t('common.no_driver'));
-      return;
-    }
     if (isManualMode) {
+      if (isEmpty(driverData)) {
+        toastError(t('common.no_driver'));
+        return;
+      }
       setIsModalOpen(true);
     } else if (isBulkMode) {
       triggerBulkDownload();
@@ -87,7 +80,6 @@ export default function KpiReport({
     setSelectedMode((prev) => ({
       bulk: false,
       manual: false,
-      custom: false,
       [mode]: !prev[mode],
     }));
   };
@@ -102,9 +94,9 @@ export default function KpiReport({
   const handleSingleDateChange = (date) => {
     if (date) {
       setSelectedDate(date);
-      setRoutingDate(date);
     }
   };
+
   const handleDateRangeChange = (dates) => {
     const [start, end] = dates;
     setStartDate(start);
@@ -116,7 +108,7 @@ export default function KpiReport({
       title={titleMenu}
       selectedMode={selectedMode}
       onToggleMode={handleRadioToggle}
-      availableModes={['bulk', 'custom', 'manual']}
+      availableModes={['bulk', 'manual']}
       singleDate={selectedDate}
       onSingleDateChange={handleSingleDateChange}
       startDate={startDate}
@@ -125,8 +117,6 @@ export default function KpiReport({
       isLoading={isLoading}
       onAction={handleAction}
       actionText={isManualMode ? t('common.upload') : t('common.download')}
-      routingDate={routingDate}
-      setRoutingDate={setRoutingDate}
       modals={
         <ManualUploadModal
           isOpen={isModalOpen}

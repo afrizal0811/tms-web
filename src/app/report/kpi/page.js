@@ -17,10 +17,10 @@ export default function KpiReportPage() {
   useEffect(() => {
     async function fetchData() {
       try {
-        const { storedLocationAcronym } = getLocalStorage();
+        const { storedLocationAcronym, storedLocationName } = getLocalStorage();
         const drivers = await getVehicles();
         setData({
-          storedLocationAcronym,
+          hubAcronym: storedLocationAcronym || storedLocationName || '',
           driverData: drivers || [],
         });
       } catch (e) {
@@ -45,7 +45,7 @@ export default function KpiReportPage() {
     <SelectionLayout>
       <KpiReport
         driverData={data.driverData}
-        hubAcronym={data.storedLocationAcronym}
+        hubAcronym={data.hubAcronym}
         isIndonesian={isIndonesian}
         isLoading={isLoading}
         setIsLoading={setIsLoading}

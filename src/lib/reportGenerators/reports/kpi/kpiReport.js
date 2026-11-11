@@ -1,95 +1,81 @@
-import { formatDateUniversal, normalizeEmail } from '@/lib/utils';
+import { formatDateUniversal } from '@/lib/utils';
 import * as XLSX from 'xlsx-js-style';
-import {
-  calculateDistanceSummary,
-  calculateLoadingCapacity,
-  calculateRouteReview,
-  calculateRoutingTime,
-  calculateVolumeSummary,
-} from './sections';
-import {
-  generateSheetDataKPI,
-  generateSheetDataRouting,
-  generateSheetPendingSO,
-  generateSheetRouteReview,
-  generateSheetStartFinish,
-} from './sheets';
+import { computeKpiMetrics } from './sections';
+import { generateSheetDataKPI, generateSheetPendingSO } from './sheets';
 
-export function generateKpiWorkbook(
+export function generateKpiWorkbook({
+  kpiRecords = [],
+  tasksData = [],
+  driverData = [],
+  fallbackDate = null,
+}) {
+  const { ws: wsPendingSO, incompleteDates } = generateSheetPendingSO(
+    tasksData,
+    driverData,
+    fallbackDate
+  );
+
+  const annotatedRecords = kpiRecords.map((rec) => {
+    const recDate = formatDateUniversal(rec.date, 'YYYY-MM-DD');
+    return {
+      ...rec,
+      hasIncompletePendingDetail:
+        Boolean(rec.hasIncompletePendingDetail) || incompleteDates.has(recDate),
+    };
+  });
+
+  const wb = XLSX.utils.book_new();
+
+  if (annotatedRecords.length > 0) {
+    const wsKPI = generateSheetDataKPI(annotatedRecords);
+    XLSX.utils.book_append_sheet(wb, wsKPI, 'Data KPI');
+  }
+
+  if (wsPendingSO) {
+    XLSX.utils.book_append_sheet(wb, wsPendingSO, 'Faktur Pending');
+  }
+
+  return {
+    wb,
+    hasKpiRows: annotatedRecords.length > 0,
+    hasIncompletePending: Boolean(wsPendingSO),
+  };
+}
+
+export function generateManualKpiWorkbook({
   selectedDate,
   locationName,
   driverData,
   resultsData,
   tasksData,
-  historiesData
-) {
-  const formattedDate = formatDateUniversal(selectedDate, 'DD-MM-YYYY');
+  historiesData,
+}) {
+  const dateIso = formatDateUniversal(selectedDate, 'YYYY-MM-DD');
   const dateFileName = formatDateUniversal(selectedDate, 'DD.MM.YYYY');
 
-  const driverMap = {};
-  if (Array.isArray(driverData)) {
-    driverData.forEach((driver) => {
-      const email = normalizeEmail(driver.email);
-      if (email) {
-        driverMap[email] = (driver.name || '').toUpperCase();
-      }
-    });
-  }
+  const { g1, kpiDataPayload } = computeKpiMetrics({
+    resultsData,
+    taskList: tasksData,
+    historiesData,
+    driverData,
+  });
 
-  const volumeSummary = calculateVolumeSummary(resultsData, tasksData, driverMap, driverData);
-  const routingTime = calculateRoutingTime(resultsData, driverMap, driverData, tasksData);
-  const distanceSummary = calculateDistanceSummary(
-    resultsData,
-    historiesData,
-    driverMap,
-    driverData,
-    tasksData
-  );
-  const loadingCapacity = calculateLoadingCapacity(
-    resultsData,
-    historiesData,
-    driverData,
-    tasksData,
-    driverMap
-  );
-  const routeReview = calculateRouteReview(
+  const manualRecord = {
+    ...kpiDataPayload,
+    date: dateIso,
+    hasIncompletePendingDetail: Boolean(g1.hasIncompletePendingDetail),
+  };
+
+  const { wb, hasIncompletePending } = generateKpiWorkbook({
+    kpiRecords: [manualRecord],
     tasksData,
     driverData,
-    historiesData,
-    routingTime.detailRows
-  );
+    fallbackDate: dateIso,
+  });
 
-  const wb = XLSX.utils.book_new();
+  const fileName = locationName
+    ? `Manual KPI - ${dateFileName} - ${locationName}.xlsx`
+    : `Manual KPI - ${dateFileName}.xlsx`;
 
-  const { wsRR, sumOvertime } = generateSheetRouteReview(
-    routeReview.routeReviewRows,
-    routeReview.startFinishRows,
-    routingTime.detailRows
-  );
-
-  const wsKPI = generateSheetDataKPI(
-    formattedDate,
-    volumeSummary,
-    routingTime,
-    distanceSummary,
-    loadingCapacity,
-    routeReview,
-    sumOvertime
-  );
-  XLSX.utils.book_append_sheet(wb, wsKPI, 'Data KPI');
-
-  const wsPendingSO = generateSheetPendingSO(tasksData, driverData);
-  XLSX.utils.book_append_sheet(wb, wsPendingSO, 'Faktur Pending');
-
-  if (routingTime.dataRoutingExists) {
-    const wsRouting = generateSheetDataRouting(routingTime);
-    XLSX.utils.book_append_sheet(wb, wsRouting, 'Data Routing');
-  }
-
-  const wsSF = generateSheetStartFinish(routeReview.startFinishRows, routeReview.routeReviewRows);
-  XLSX.utils.book_append_sheet(wb, wsSF, 'Start & Finish');
-
-  XLSX.utils.book_append_sheet(wb, wsRR, 'Route Review');
-
-  return { wb, fileName: `KPI - ${dateFileName} - ${locationName}.xlsx`, hasError: false };
+  return { wb, fileName, hasIncompletePending };
 }

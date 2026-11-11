@@ -1,146 +1,101 @@
-import { getBasePlate } from '@/lib/utils';
+import { formatDateUniversal } from '@/lib/utils';
 import * as XLSX from 'xlsx-js-style';
 
-export function generateSheetDataKPI(formattedDate, g1, g2, g3, g4, g5, sumOvertime = 0) {
-  const headers = [
-    'Tanggal',
-    'No of Trucks DRY',
-    'No of Trucks FRZ',
-    'No of Trucks',
-    'No of TT DRY',
-    'No of TT FRZ',
-    'No of RT Dry',
-    'No of RT FRZ',
+const HEADERS = [
+  'Tanggal',
+  'No of Trucks DRY',
+  'No of Trucks FRZ',
+  'No of Trucks',
+  'No of TT DRY',
+  'No of TT FRZ',
+  'No of RT Dry',
+  'No of RT FRZ',
+  '',
+  'RT by Routing',
+  'RT by Driver',
+  'RT by Sales',
+  'RT by Customer',
+  'RT by Other',
+  'Est Operating Hours DRY',
+  'Est Operating Hours FRZ',
+  '',
+  'Act Operating hours',
+  'Est Distance DRY',
+  'Est Distance FRZ',
+  '',
+  'Act Distance DRY',
+  'Act Distance FRZ',
+  'Act Distance',
+  'Loading Capacity DRY (Kg)',
+  'Loading Volume DRY (Kg)',
+  'Loading Capacity DRY (Cbm)',
+  'Loading Volume DRY (Cbm)',
+  'Loading Capacity FRZ (Kg)',
+  'Loading Volume FRZ (Kg)',
+  'Loading Capacity FRZ (Cbm)',
+  'Loading Volume FRZ (Cbm)',
+  '',
+  'No of master maintenance',
+  'No of Route Reviewing',
+];
+
+const SEPARATOR_INDICES = [8, 16, 20, 32];
+const RT_INDICES = [9, 10, 11, 12, 13];
+
+function mapKpiRecordToRow(record) {
+  const actHourTotal = Number(record.act_hour_dry || 0) + Number(record.act_hour_frz || 0);
+  const actDistTotal = Number(
+    (Number(record.act_dist_dry || 0) + Number(record.act_dist_frz || 0)).toFixed(2)
+  );
+
+  return [
+    formatDateUniversal(record.date, 'DD-MM-YYYY'),
+    Number(record.truck_dry ?? 0),
+    Number(record.truck_frz ?? 0),
+    Number(record.total_truck ?? 0),
+    Number(record.task_dry ?? 0),
+    Number(record.task_frz ?? 0),
+    Number(record.pending_dry ?? 0),
+    Number(record.pending_frz ?? 0),
     '',
-    'RT by Routing',
-    'RT by Driver',
-    'RT by Sales',
-    'RT by Customer',
-    'RT by Other',
-    'Est Operating Hours DRY',
-    'Est Operating Hours FRZ',
+    record.pending_routing ?? null,
+    record.pending_driver ?? null,
+    record.pending_sales ?? null,
+    record.pending_customer ?? null,
+    record.pending_other ?? null,
+    Number(record.est_hour_dry ?? 0),
+    Number(record.est_hour_frz ?? 0),
     '',
-    'Act Operating hours',
-    'Est Distance DRY',
-    'Est Distance FRZ',
+    actHourTotal,
+    Number(record.est_dist_dry ?? 0),
+    Number(record.est_dist_frz ?? 0),
     '',
-    'Act Distance DRY',
-    'Act Distance FRZ',
-    'Act Distance',
-    'Loading Capacity DRY (Kg)',
-    'Loading Volume DRY (Kg)',
-    'Loading Capacity DRY (Cbm)',
-    'Loading Volume DRY (Cbm)',
-    'Loading Capacity FRZ (Kg)',
-    'Loading Volume FRZ (Kg)',
-    'Loading Capacity FRZ (Cbm)',
-    'Loading Volume FRZ (Cbm)',
+    Number(record.act_dist_dry ?? 0),
+    Number(record.act_dist_frz ?? 0),
+    actDistTotal,
+    Number(record.capacity_kg_dry ?? 0),
+    Number(record.total_kg_dry ?? 0),
+    Number(record.capacity_cbm_dry ?? 0),
+    Number(record.total_cbm_dry ?? 0),
+    Number(record.capacity_kg_frz ?? 0),
+    Number(record.total_kg_frz ?? 0),
+    Number(record.capacity_cbm_frz ?? 0),
+    Number(record.total_cbm_frz ?? 0),
     '',
-    'No of master maintenance',
-    'No of Route Reviewing',
+    Math.round(Number(record.updated_master ?? 0)),
+    Math.abs(Number(record.route_review ?? 0)),
   ];
+}
 
-  const separatorIndices = [8, 16, 20, 32];
-  const rtIndices = [9, 10, 11, 12, 13];
-
-  let totalMenitEstDry = 0;
-  let totalMenitEstFrz = 0;
-  const seenRouting = new Set();
-
-  if (g2 && Array.isArray(g2.detailRows)) {
-    g2.detailRows.forEach((row) => {
-      if (!row.isNoRoutingData) {
-        const spentTimeHHMM = `${Math.floor(row.spent / 60)}:${String(row.spent % 60).padStart(2, '0')}`;
-        const key = `${row.routing}|${getBasePlate((row.plat || '').toUpperCase().trim())}|${row.driver}|${row.visit}|${row.travel}|${row.wait}|${row.spent}|${spentTimeHHMM}`;
-        if (!seenRouting.has(key)) {
-          seenRouting.add(key);
-          if (row.category === 'DRY') totalMenitEstDry += row.spent;
-          else if (row.category === 'FROZEN') totalMenitEstFrz += row.spent;
-        }
-      }
-    });
-  }
-
-  const finalEstOpDry =
-    g2?.opsHoursDry != null ? g2.opsHoursDry : Math.round(totalMenitEstDry / 60);
-  const finalEstOpFrz =
-    g2?.opsHoursFrz != null ? g2.opsHoursFrz : Math.round(totalMenitEstFrz / 60);
-
-  let finalActOpHours = 0;
-  if (g5 && Array.isArray(g5.startFinishRows)) {
-    const dedupeSF = new Map();
-    g5.startFinishRows.forEach((row) => {
-      let durasiHour = 0;
-      if (typeof row.durasi === 'string' && row.durasi.includes(':')) {
-        const parts = row.durasi.split(':');
-        const totalMenit = (parseInt(parts[0], 10) || 0) * 60 + (parseInt(parts[1], 10) || 0);
-        durasiHour = Math.round(totalMenit / 60);
-      }
-      const key = `${row.tipe}|${row.driver}|${row.startTime}|${row.finishTime}|${row.durasi}`;
-      dedupeSF.set(key, durasiHour);
-    });
-    dedupeSF.forEach((val) => {
-      finalActOpHours += val;
-    });
-  } else {
-    finalActOpHours = g3?.actOperatingHours || 0;
-  }
-
-  const g2Map = new Map();
-  if (g2 && Array.isArray(g2.detailRows)) {
-    g2.detailRows.forEach((row) => {
-      if (!row.isNoRoutingData) {
-        g2Map.set((row.driver || '').toUpperCase(), row.spent > 0 ? Math.round(row.spent / 60) : 0);
-      }
-    });
-  }
-
-  const sfMap = new Map();
-  if (g5 && Array.isArray(g5.startFinishRows)) {
-    g5.startFinishRows.forEach((r) => {
-      sfMap.set(`${r.driver}|${r.plat}`, r);
-    });
-  }
+export function generateSheetDataKPI(kpiRecords = []) {
+  const records = Array.isArray(kpiRecords) ? kpiRecords : [kpiRecords];
+  const dataRows = records.map(mapKpiRecordToRow);
+  const dataEndRow = dataRows.length;
+  const noteStartRow = dataEndRow + 2;
 
   const sheetData = [
-    headers,
-    [
-      formattedDate,
-      g1.countDry,
-      g1.countFrz,
-      g1.countTotal,
-      g1.ttDry,
-      g1.ttFrz,
-      g1.rtDry,
-      g1.rtFrz,
-      '',
-      g1.rtRouting ?? null,
-      g1.rtDriver ?? null,
-      g1.rtSales ?? null,
-      g1.rtCustomer ?? null,
-      g1.rtOther ?? null,
-      finalEstOpDry,
-      finalEstOpFrz,
-      '',
-      finalActOpHours,
-      g3.estDistanceDry,
-      g3.estDistanceFrz,
-      '',
-      g4.actDistDryKm,
-      g4.actDistFrzKm,
-      g4.actDistTotalKm,
-      g4.capWeightDry,
-      g4.actWeightDry,
-      g4.capVolDry,
-      g4.actVolDry,
-      g4.capWeightFrz,
-      g4.actWeightFrz,
-      g4.capVolFrz,
-      g4.actVolFrz,
-      '',
-      Math.round(g5.countMasterMaintenance),
-      Math.abs(sumOvertime),
-    ],
+    HEADERS,
+    ...dataRows,
     [],
     ['NOTE'],
     ['Saat paste di google sheet, tekan kombinasi CTRL+SHIFT+V'],
@@ -187,20 +142,21 @@ export function generateSheetDataKPI(formattedDate, g1, g2, g3, g4, g5, sumOvert
       const cell = XLSX.utils.encode_cell({ r: R, c: C });
       if (!ws[cell]) ws[cell] = { v: '', t: 's' };
 
-      if (R === 3 && C === 0) ws[cell].s = styleNoteTitle;
-      else if (R === 4 && C === 0) ws[cell].s = styleNoteText;
-      else if (R === 5 && C === 0) ws[cell].s = styleLegendColor;
-      else if (R === 5 && C === 1) ws[cell].s = styleLegendText;
-      else if (R <= 1) {
-        if (separatorIndices.includes(C)) ws[cell].s = styleSeparator;
-        else if (rtIndices.includes(C) && R === 1) {
-          ws[cell].s = g1?.hasIncompletePendingDetail ? styleRtError : styleCenter;
+      if (R === noteStartRow && C === 0) ws[cell].s = styleNoteTitle;
+      else if (R === noteStartRow + 1 && C === 0) ws[cell].s = styleNoteText;
+      else if (R === noteStartRow + 2 && C === 0) ws[cell].s = styleLegendColor;
+      else if (R === noteStartRow + 2 && C === 1) ws[cell].s = styleLegendText;
+      else if (R <= dataEndRow) {
+        if (SEPARATOR_INDICES.includes(C)) ws[cell].s = styleSeparator;
+        else if (R === 0) ws[cell].s = styleHeader;
+        else if (RT_INDICES.includes(C)) {
+          const rowRecord = records[R - 1];
+          ws[cell].s = rowRecord?.hasIncompletePendingDetail ? styleRtError : styleCenter;
           if (typeof ws[cell].v === 'number') {
             ws[cell].t = 'n';
             ws[cell].z = '0';
           }
-        } else if (R === 0) ws[cell].s = styleHeader;
-        else {
+        } else {
           ws[cell].s = styleCenter;
           if (typeof ws[cell].v === 'number') {
             ws[cell].t = 'n';
@@ -212,13 +168,13 @@ export function generateSheetDataKPI(formattedDate, g1, g2, g3, g4, g5, sumOvert
     }
   }
 
-  ws['!cols'] = headers.map((_, i) =>
-    separatorIndices.includes(i) ? { wch: 2 } : i === 0 ? { wch: 15 } : { wch: 20 }
+  ws['!cols'] = HEADERS.map((_, i) =>
+    SEPARATOR_INDICES.includes(i) ? { wch: 2 } : i === 0 ? { wch: 15 } : { wch: 20 }
   );
   ws['!merges'] = [
-    { s: { r: 3, c: 0 }, e: { r: 3, c: 6 } },
-    { s: { r: 4, c: 0 }, e: { r: 4, c: 6 } },
-    { s: { r: 5, c: 1 }, e: { r: 5, c: 6 } },
+    { s: { r: noteStartRow, c: 0 }, e: { r: noteStartRow, c: 6 } },
+    { s: { r: noteStartRow + 1, c: 0 }, e: { r: noteStartRow + 1, c: 6 } },
+    { s: { r: noteStartRow + 2, c: 1 }, e: { r: noteStartRow + 2, c: 6 } },
   ];
 
   return ws;

@@ -1,4 +1,5 @@
 export * from './distanceSummary';
+export * from './kpiMetrics';
 export * from './loadingCapacity';
 export * from './routeReview';
 export * from './routingTime';
