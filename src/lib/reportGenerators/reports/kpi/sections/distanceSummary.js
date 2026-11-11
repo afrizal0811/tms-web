@@ -22,6 +22,7 @@ export function calculateDistanceSummary(
   let rawDistDryMeters = 0;
   let rawDistFrzMeters = 0;
 
+  const processedPlates = new Set();
   if (Array.isArray(resultsData)) {
     resultsData.forEach((item) => {
       const plates = Array.from(
@@ -33,6 +34,7 @@ export function calculateDistanceSummary(
       );
 
       plates.forEach((plat) => {
+        processedPlates.add(plat);
         const route = { basePlat: plat, vehicleName: plat };
         const category = resolveRouteCategory(route, item, tasksData, driverData, driverMap);
         const vehicleDistMeters = Number(item.totalDistance?.[plat] || 0);
@@ -42,6 +44,24 @@ export function calculateDistanceSummary(
           else if (category === 'FROZEN') rawDistFrzMeters += vehicleDistMeters;
         }
       });
+    });
+  }
+
+  if (Array.isArray(tasksData)) {
+    tasksData.forEach((task) => {
+      const plat = task.basePlat || task.vehicleName || task.plat;
+      if (plat && processedPlates.has(plat)) return;
+
+      const taskDist = Number(task.distance ?? task.travelDistance ?? 0);
+      if (taskDist > 0) {
+        let category = (task.typeStorage || task.storage || '').toUpperCase();
+        if (!category.includes('DRY') && !category.includes('FRZ') && !category.includes('FROZEN')) {
+          const route = { basePlat: plat, vehicleName: plat };
+          category = resolveRouteCategory(route, null, tasksData, driverData, driverMap);
+        }
+        if (category.includes('DRY')) rawDistDryMeters += taskDist * 1000;
+        else if (category.includes('FRZ') || category.includes('FROZEN')) rawDistFrzMeters += taskDist * 1000;
+      }
     });
   }
 

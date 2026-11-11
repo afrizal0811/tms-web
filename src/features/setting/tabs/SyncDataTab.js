@@ -708,16 +708,18 @@ export default function SyncDataTab({
             setPendingKpiTasks([]);
             setPendingKpiTarget(null);
           }}
-          onSuccess={() => {
-            setPendingKpiTasks([]);
+          onSuccess={async () => {
             if (pendingKpiTarget) {
               const { storedUser } = getLocalStorage();
-              processKpiData({
-                hubId: pendingKpiTarget.hubId,
-                deliveryDates: pendingKpiTarget.dates,
-                userName: storedUser?.name || 'system',
-              }).catch((err) => console.warn('[SyncDataTab] Async KPI retry error:', err.message));
-              setPendingKpiTarget(null);
+              try {
+                await processKpiData({
+                  hubId: pendingKpiTarget.hubId,
+                  deliveryDates: pendingKpiTarget.dates,
+                  userName: storedUser?.name || 'system',
+                });
+              } catch (err) {
+                console.warn('[SyncDataTab] Async KPI retry error:', err.message);
+              }
             }
           }}
         />

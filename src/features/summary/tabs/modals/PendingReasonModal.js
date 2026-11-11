@@ -6,7 +6,7 @@ import Dropdown from '@/components/dropdown/Dropdown';
 import ConfirmModal from '@/components/modal/ConfirmModal';
 import Modal from '@/components/modal/Modal';
 import { deletePendingDetail, postPendingDetail } from '@/lib/api/mileapp';
-import { DELIVERY_STATUS_KEYS } from '@/lib/deliveryStatus';
+import { DELIVERY_STATUS_KEYS, normalizeDeliveryStatus } from '@/lib/deliveryStatus';
 import { useDeliveryStatus } from '@/lib/hooks/useDeliveryStatus';
 import { useSuperadmin } from '@/lib/hooks/useSuperadmin';
 import { getLocalStorage } from '@/lib/localStorageHandler';
@@ -36,6 +36,25 @@ function isConversionItem(item) {
   return Boolean(item?.isSuccessConversion);
 }
 
+function isOngoingPastItem(item) {
+  if (item?.isOngoingPast) return true;
+  const statusNorm = normalizeDeliveryStatus(
+    item?.originalStatus || item?.statusDelivery || item?.status
+  );
+  if (statusNorm !== DELIVERY_STATUS_KEYS.ONGOING) return false;
+
+  const dateVal = item?.deliveryDate || item?.dateStr || item?.delivery_date;
+  if (!dateVal) return false;
+  const todayStr = formatDateUniversal(new Date(), 'YYYY-MM-DD');
+  const dStr = formatDateUniversal(dateVal, 'YYYY-MM-DD');
+  const [ty, tm, td] = todayStr.split('-').map(Number);
+  const [dy, dm, dd] = dStr.split('-').map(Number);
+  const diffDays = Math.floor(
+    (Date.UTC(ty, tm - 1, td) - Date.UTC(dy, dm - 1, dd)) / (24 * 60 * 60 * 1000)
+  );
+  return diffDays > 3;
+}
+
 function getItemKey(item) {
   return String(item?.id || item?.taskId || item?._id || '');
 }
@@ -50,7 +69,7 @@ export default function PendingReasonModal({
   onBack,
   noClose = false,
 }) {
-  const { formatStatus, isPendingGr, normalizeStatus } = useDeliveryStatus();
+  const { formatStatus, isPendingGr } = useDeliveryStatus();
   const { isSuperadmin } = useSuperadmin();
   const { t: translate } = useLanguage();
 
@@ -77,20 +96,25 @@ export default function PendingReasonModal({
     const initialForms = {};
     for (const item of items) {
       const isConversion = isConversionItem(item);
+      const isOngoingPast = isOngoingPastItem(item);
       const pd = item.pendingDetail || {};
       const initStatus =
-        pd.new_status || (isConversion ? '' : item.statusDelivery || item.status || '');
-      initialForms[getItemKey(item)] = {
+        pd.new_status ||
+        (isConversion || isOngoingPast ? '' : item.statusDelivery || item.status || '');
+      const baseFields = {
         statusDelivery: initStatus,
         intExt: pd.internalExternal || '',
         detail: pd.detailReason || '',
         groupReason: pd.groupReason || '',
         pic: pd.pic || '',
-        initialIntExt: pd.internalExternal || '',
-        initialDetail: pd.detailReason || '',
-        initialGroupReason: pd.groupReason || '',
-        initialPic: pd.pic || '',
-        initialStatusDelivery: initStatus,
+      };
+      initialForms[getItemKey(item)] = {
+        ...baseFields,
+        initialIntExt: baseFields.intExt,
+        initialDetail: baseFields.detail,
+        initialGroupReason: baseFields.groupReason,
+        initialPic: baseFields.pic,
+        initialStatusDelivery: baseFields.statusDelivery,
       };
     }
     setForms(initialForms);
@@ -101,6 +125,10 @@ export default function PendingReasonModal({
   const currentForm = (currentItem && forms[currentKey]) || {};
 
   const isSuccessConversion = isConversionItem(currentItem);
+  const isOngoingPast = isOngoingPastItem(currentItem);
+  const showStatusDropdown = isSuccessConversion || isOngoingPast;
+  const isCurrentStatusSuccess =
+    normalizeDeliveryStatus(currentForm.statusDelivery) === DELIVERY_STATUS_KEYS.SUCCESS;
 
   const updateCurrentForm = (fieldObj) => {
     if (!currentItem) return;
@@ -153,7 +181,15 @@ export default function PendingReasonModal({
   }, [currentForm.groupReason, currentForm.pic, currentForm.intExt, sortedReasons]);
 
   const statusDeliveryOptions = useMemo(() => {
-    const list = [
+    const list = [];
+    if (isOngoingPast) {
+      list.push({
+        value: DELIVERY_STATUS_KEYS.SUCCESS,
+        label: formatStatus(DELIVERY_STATUS_KEYS.SUCCESS),
+      });
+    }
+
+    list.push(
       {
         value: DELIVERY_STATUS_KEYS.PARTIAL,
         label: formatStatus(DELIVERY_STATUS_KEYS.PARTIAL),
@@ -165,8 +201,8 @@ export default function PendingReasonModal({
       {
         value: DELIVERY_STATUS_KEYS.CANCEL,
         label: formatStatus(DELIVERY_STATUS_KEYS.CANCEL),
-      },
-    ];
+      }
+    );
 
     if (
       hasPendingGR ||
@@ -180,7 +216,7 @@ export default function PendingReasonModal({
     }
 
     return list;
-  }, [formatStatus, hasPendingGR, isPendingGr, currentItem?.status, currentItem?.originalStatus]);
+  }, [formatStatus, hasPendingGR, isPendingGr, isOngoingPast, currentItem]);
 
   const handleGroupReasonChange = (val) => {
     if (!val) {
@@ -228,13 +264,22 @@ export default function PendingReasonModal({
     const allFilled = items.every((item) => {
       const f = forms[getItemKey(item)];
       if (!f) return false;
-      if (isConversionItem(item) && !f.statusDelivery) return false;
+      const ongoingPast = isOngoingPastItem(item);
+      const conversion = isConversionItem(item);
+      const needsStatus = ongoingPast || conversion;
+
+      if (needsStatus && !f.statusDelivery) return false;
+
+      const isStatusSuccess =
+        normalizeDeliveryStatus(f.statusDelivery) === DELIVERY_STATUS_KEYS.SUCCESS;
+      if (isStatusSuccess) return true;
+
       return Boolean(f.groupReason && f.pic && f.detail?.trim());
     });
 
     if (!allFilled) return true;
 
-    if (items.length === 1 && !isSuccessConversion) {
+    if (items.length === 1 && !isSuccessConversion && !isOngoingPast) {
       const f = forms[currentKey];
       if (!f) return true;
       const isUnchanged =
@@ -247,7 +292,7 @@ export default function PendingReasonModal({
     }
 
     return false;
-  }, [isLoading.save, items, forms, currentKey, isSuccessConversion]);
+  }, [isLoading.save, items, forms, currentKey, isSuccessConversion, isOngoingPast]);
 
   const handleSave = async () => {
     if (isSaveDisabled) return;
@@ -255,32 +300,43 @@ export default function PendingReasonModal({
     try {
       const userName = getUserName();
 
-      for (const item of items) {
+      const payloads = items.map((item) => {
         const f = forms[getItemKey(item)];
         const isConversion = isConversionItem(item);
-        const newStatusVal = isConversion
+        const isOngoingPast = isOngoingPastItem(item);
+        const requiresStatusDropdown = isConversion || isOngoingPast;
+
+        const newStatusVal = requiresStatusDropdown
           ? f.statusDelivery
           : (item?.pendingDetail?.new_status ?? null);
 
-        const payload = {
+        const isSuccess =
+          normalizeDeliveryStatus(newStatusVal) === DELIVERY_STATUS_KEYS.SUCCESS;
+
+        return {
           taskId: getItemKey(item),
           date: formatDateUniversal(item.deliveryDate || item.dateStr),
           new_status: newStatusVal,
-          internalExternal: f.intExt,
-          detailReason: f.detail.trim(),
-          groupReason: f.groupReason,
-          pic: f.pic,
+          internalExternal: isSuccess ? null : f.intExt,
+          detailReason: isSuccess ? null : f.detail?.trim() || null,
+          groupReason: isSuccess ? null : f.groupReason || null,
+          pic: isSuccess ? null : f.pic || null,
           userName,
           created_by: item?.pendingDetail?.created_by || userName,
           updated_by: userName,
         };
+      });
 
-        const res = await postPendingDetail(payload);
-        const savedData = res.data || res;
-        onSuccess?.(savedData);
+      const res = await postPendingDetail(payloads.length === 1 ? payloads[0] : payloads);
+      const savedData = res.data || res;
+
+      if (Array.isArray(savedData)) {
+        savedData.forEach((sd) => emitPendingUpdate(sd));
+      } else {
         emitPendingUpdate(savedData);
       }
 
+      await onSuccess?.(savedData);
       toastSuccess(translate('common.toast.success'));
       onClose?.();
     } catch (e) {
@@ -322,9 +378,9 @@ export default function PendingReasonModal({
         resultData = { taskId: targetTaskId, deleted: true };
       }
 
-      toastSuccess(translate('common.toast.success'));
-      onSuccess?.(resultData);
+      await onSuccess?.(resultData);
       emitPendingUpdate(resultData);
+      toastSuccess(translate('common.toast.success'));
       onClose?.();
     } catch (e) {
       toastError(translate('common.toast.error', { err: e.message }), e);
@@ -380,7 +436,9 @@ export default function PendingReasonModal({
   const baseOrigStatus =
     currentItem?.originalStatus || currentItem?.statusDelivery || currentItem?.status;
   const isStatusChanged = Boolean(
-    statusText && baseOrigStatus && normalizeStatus(statusText) !== normalizeStatus(baseOrigStatus)
+    statusText &&
+      baseOrigStatus &&
+      normalizeDeliveryStatus(statusText) !== normalizeDeliveryStatus(baseOrigStatus)
   );
 
   const modalTitle = (
@@ -502,7 +560,7 @@ export default function PendingReasonModal({
         footer={footer}
       >
         <div className="flex flex-col gap-4">
-          {isSuccessConversion && (
+          {showStatusDropdown && (
             <div>
               <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
                 {translate('common.status.delivery_status')}
@@ -524,7 +582,7 @@ export default function PendingReasonModal({
             </div>
           )}
 
-          {!isSuccessConversion && (
+          {!showStatusDropdown && (
             <div>
               <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
                 {translate('summary.tabs.pending_reasons.reason')}
@@ -539,62 +597,66 @@ export default function PendingReasonModal({
             </div>
           )}
 
-          <div>
-            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
-              {translate('summary.tabs.pending_reasons.group_reason')}
-              <span className="text-red-600 dark:text-red-400">*</span>
-            </label>
-            <Dropdown
-              value={currentDropdownValue}
-              onChange={handleGroupReasonChange}
-              options={reasonOptions}
-              getLabel={getDropdownLabel}
-              isAutocomplete={true}
-              className="w-full"
-            />
-          </div>
+          {!isCurrentStatusSuccess && (
+            <>
+              <div>
+                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+                  {translate('summary.tabs.pending_reasons.group_reason')}
+                  <span className="text-red-600 dark:text-red-400">*</span>
+                </label>
+                <Dropdown
+                  value={currentDropdownValue}
+                  onChange={handleGroupReasonChange}
+                  options={reasonOptions}
+                  getLabel={getDropdownLabel}
+                  isAutocomplete={true}
+                  className="w-full"
+                />
+              </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
-                {translate('summary.tabs.pending_reasons.category')}
-              </label>
-              <input
-                type="text"
-                readOnly
-                value={currentForm.intExt || ''}
-                placeholder={translate('summary.tabs.pending_reasons.category')}
-                className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 bg-gray-100 dark:bg-slate-700/50 text-slate-600 dark:text-slate-300 rounded-md outline-none cursor-not-allowed text-sm"
-              />
-            </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+                    {translate('summary.tabs.pending_reasons.category')}
+                  </label>
+                  <input
+                    type="text"
+                    readOnly
+                    value={currentForm.intExt || ''}
+                    placeholder={translate('summary.tabs.pending_reasons.category')}
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 bg-gray-100 dark:bg-slate-700/50 text-slate-600 dark:text-slate-300 rounded-md outline-none cursor-not-allowed text-sm"
+                  />
+                </div>
 
-            <div>
-              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
-                PIC
-              </label>
-              <input
-                type="text"
-                readOnly
-                value={currentForm.pic || ''}
-                placeholder="PIC"
-                className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 bg-gray-100 dark:bg-slate-700/50 text-slate-600 dark:text-slate-300 rounded-md outline-none cursor-not-allowed text-sm"
-              />
-            </div>
-          </div>
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+                    PIC
+                  </label>
+                  <input
+                    type="text"
+                    readOnly
+                    value={currentForm.pic || ''}
+                    placeholder="PIC"
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 bg-gray-100 dark:bg-slate-700/50 text-slate-600 dark:text-slate-300 rounded-md outline-none cursor-not-allowed text-sm"
+                  />
+                </div>
+              </div>
 
-          <div>
-            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
-              {translate('summary.tabs.pending_reasons.detail')}
-              <span className="text-red-600 dark:text-red-400">*</span>
-            </label>
-            <textarea
-              rows="3"
-              value={currentForm.detail || ''}
-              onChange={(e) => updateCurrentForm({ detail: e.target.value })}
-              placeholder={translate('summary.tabs.pending_reasons.detail_placeholder')}
-              className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-md focus:outline-none focus:ring-1 focus:ring-sky-500 resize-none bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200"
-            />
-          </div>
+              <div>
+                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+                  {translate('summary.tabs.pending_reasons.detail')}
+                  <span className="text-red-600 dark:text-red-400">*</span>
+                </label>
+                <textarea
+                  rows="3"
+                  value={currentForm.detail || ''}
+                  onChange={(e) => updateCurrentForm({ detail: e.target.value })}
+                  placeholder={translate('summary.tabs.pending_reasons.detail_placeholder')}
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-md focus:outline-none focus:ring-1 focus:ring-sky-500 resize-none bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200"
+                />
+              </div>
+            </>
+          )}
         </div>
       </Modal>
     </>

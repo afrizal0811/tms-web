@@ -1,4 +1,8 @@
-import { normalizeDeliveryStatus } from '@/lib/deliveryStatus';
+import {
+  DELIVERY_STATUS_KEYS,
+  isTaskUnassigned,
+  normalizeDeliveryStatus,
+} from '@/lib/deliveryStatus';
 import { getStorageType, normalizeEmail } from '@/lib/utils';
 import { resolveRouteCategory } from '../../../helper/resolveRouteCategory';
 
@@ -7,6 +11,7 @@ export function calculateVolumeSummary(resultsData, tasksData, driverMap, driver
   const frzTrucks = new Set();
   let ttDry = 0;
   let ttFrz = 0;
+  const countedTaskIds = new Set();
 
   if (Array.isArray(resultsData)) {
     resultsData.forEach((item) => {
@@ -20,11 +25,19 @@ export function calculateVolumeSummary(resultsData, tasksData, driverMap, driver
 
       plates.forEach((plat) => {
         const truckId = plat || '-';
-        const taskCount = Array.isArray(tasksData)
-          ? tasksData.filter((t) => (t.basePlat || t.vehicleName || t.plat) === truckId).length
-          : 0;
+        const matchingTasks = Array.isArray(tasksData)
+          ? tasksData.filter(
+              (t) =>
+                !isTaskUnassigned(t) && (t.basePlat || t.vehicleName || t.plat) === truckId
+            )
+          : [];
+        const taskCount = matchingTasks.length;
         const tripsCount = taskCount || 1;
         if (tripsCount === 0) return;
+
+        matchingTasks.forEach((t) => {
+          if (t.id || t._id) countedTaskIds.add(String(t.id || t._id));
+        });
 
         const route = { basePlat: plat, vehicleName: plat };
         const category = resolveRouteCategory(route, item, tasksData, driverData, driverMap);
@@ -42,6 +55,31 @@ export function calculateVolumeSummary(resultsData, tasksData, driverMap, driver
     });
   }
 
+  if (Array.isArray(tasksData)) {
+    tasksData.forEach((task) => {
+      if (isTaskUnassigned(task)) return;
+      const taskId = String(task.id || task._id || '');
+      if (taskId && countedTaskIds.has(taskId)) return;
+
+      const truckId = task.basePlat || task.vehicleName || task.plat || task.driverName || null;
+      let category = (task.typeStorage || task.storage || '').toUpperCase();
+      if (!category.includes('DRY') && !category.includes('FRZ') && !category.includes('FROZEN')) {
+        const route = { basePlat: truckId, vehicleName: truckId };
+        category = resolveRouteCategory(route, null, tasksData, driverData, driverMap);
+      }
+
+      if (category.includes('DRY')) {
+        if (truckId) dryTrucks.add(truckId);
+        ttDry += 1;
+        if (taskId) countedTaskIds.add(taskId);
+      } else if (category.includes('FRZ') || category.includes('FROZEN')) {
+        if (truckId) frzTrucks.add(truckId);
+        ttFrz += 1;
+        if (taskId) countedTaskIds.add(taskId);
+      }
+    });
+  }
+
   const countDry = dryTrucks.size;
   const countFrz = frzTrucks.size;
   const countTotal = countDry + countFrz;
@@ -52,18 +90,13 @@ export function calculateVolumeSummary(resultsData, tasksData, driverMap, driver
 
   if (Array.isArray(tasksData)) {
     tasksData.forEach((task) => {
-      let isRedelivery = normalizeDeliveryStatus(task.statusDelivery) === 'PENDING';
+      if (isTaskUnassigned(task)) return;
+      const pd = task.pendingDetail;
+      const effectiveStatus = pd?.new_status || task.statusDelivery || task.status;
+      const norm = normalizeDeliveryStatus(effectiveStatus);
+      const isPending = norm === DELIVERY_STATUS_KEYS.PENDING;
 
-      if (!isRedelivery) {
-        let statusGr = '';
-        if (task.statusGr) {
-          statusGr =
-            typeof task.statusGr === 'string' ? task.statusGr.split(',')[0].trim() : task.statusGr;
-        }
-        isRedelivery = normalizeDeliveryStatus(statusGr) === 'PENDING';
-      }
-
-      if (isRedelivery) {
+      if (isPending) {
         pendingTasks.push(task);
         let driverName = task.driverName === '-' ? '' : task.driverName || '';
         let category = task.typeStorage === '-' ? '' : task.typeStorage || '';

@@ -1,4 +1,3 @@
-// File: src/lib/deliveryStatus.js
 import { formatDateUniversal } from './utils';
 
 export const DELIVERY_STATUS_KEYS = {
@@ -12,50 +11,28 @@ export const DELIVERY_STATUS_KEYS = {
   UNASSIGNED: 'UNASSIGNED',
 };
 
-/**
- * Normalizes any raw delivery status string/array into a canonical status key:
- * 'SUCCESS' | 'PARTIAL' | 'PENDING' | 'CANCEL' | 'PENDING_GR' | 'DONE' | 'ONGOING' | 'UNASSIGNED' | null
- */
 export function normalizeDeliveryStatus(rawStatus) {
   if (!rawStatus) return null;
 
-  let val = rawStatus;
-  if (Array.isArray(val)) {
-    val = val[0] || '';
-  }
+  let val = Array.isArray(rawStatus) ? rawStatus[0] || '' : rawStatus;
   if (typeof val !== 'string') {
     val = String(val);
   }
 
-  // Handle comma-separated statuses e.g. "TERIMA SEBAGIAN, BARANG KURANG"
-  if (val.includes(',')) {
-    val = val.split(',')[0].trim();
-  }
+  val = val.split(',')[0].trim();
 
   const clean = val.replace(/_/g, ' ').trim().toUpperCase();
   if (!clean || clean === '-') return null;
 
-  if (clean === 'SUKSES' || clean === 'SUCCESS') {
-    return DELIVERY_STATUS_KEYS.SUCCESS;
-  }
-  if (clean === 'TERIMA SEBAGIAN' || clean === 'PARTIAL' || clean.startsWith('TERIMA SEBAGIAN')) {
+  if (clean === 'SUKSES' || clean === 'SUCCESS') return DELIVERY_STATUS_KEYS.SUCCESS;
+  if (clean === 'PARTIAL' || clean.startsWith('TERIMA SEBAGIAN')) {
     return DELIVERY_STATUS_KEYS.PARTIAL;
   }
-  if (clean === 'BATAL' || clean === 'CANCEL') {
-    return DELIVERY_STATUS_KEYS.CANCEL;
-  }
-  if (clean === 'PENDING GR' || clean.startsWith('PENDING GR')) {
-    return DELIVERY_STATUS_KEYS.PENDING_GR;
-  }
-  if (clean === 'PENDING' || clean.startsWith('PENDING')) {
-    return DELIVERY_STATUS_KEYS.PENDING;
-  }
-  if (clean === 'DONE' || clean === 'SELESAI') {
-    return DELIVERY_STATUS_KEYS.DONE;
-  }
-  if (clean === 'ONGOING' || clean === 'BERJALAN') {
-    return DELIVERY_STATUS_KEYS.ONGOING;
-  }
+  if (clean === 'BATAL' || clean === 'CANCEL') return DELIVERY_STATUS_KEYS.CANCEL;
+  if (clean.startsWith('PENDING GR')) return DELIVERY_STATUS_KEYS.PENDING_GR;
+  if (clean.startsWith('PENDING')) return DELIVERY_STATUS_KEYS.PENDING;
+  if (clean === 'DONE' || clean === 'SELESAI') return DELIVERY_STATUS_KEYS.DONE;
+  if (clean === 'ONGOING' || clean === 'BERJALAN') return DELIVERY_STATUS_KEYS.ONGOING;
   if (clean === 'UNASSIGNED' || clean === 'BELUM DITUGASKAN') {
     return DELIVERY_STATUS_KEYS.UNASSIGNED;
   }
@@ -63,11 +40,27 @@ export function normalizeDeliveryStatus(rawStatus) {
   return clean;
 }
 
-/**
- * Checks whether raw status matches a target status key.
- */
 export function isDeliveryStatus(rawStatus, targetKey) {
   return normalizeDeliveryStatus(rawStatus) === targetKey;
+}
+
+export function isTaskUnassigned(task) {
+  if (!task) return false;
+  const sNorm = normalizeDeliveryStatus(task.status);
+  const sdNorm = normalizeDeliveryStatus(task.status_delivery || task.statusDelivery);
+  if (sNorm === DELIVERY_STATUS_KEYS.UNASSIGNED || sdNorm === DELIVERY_STATUS_KEYS.UNASSIGNED) {
+    return true;
+  }
+  const hasAssignee = Boolean(
+    (task.assignee || '').trim() ||
+      (task.driver_name || task.driverName || '').trim() ||
+      (task.plat || task.basePlat || '').trim()
+  );
+  return (
+    !hasAssignee &&
+    sNorm !== DELIVERY_STATUS_KEYS.SUCCESS &&
+    sNorm !== DELIVERY_STATUS_KEYS.DONE
+  );
 }
 
 export function isSuccessStatus(rawStatus) {
@@ -275,9 +268,18 @@ export function deliveryTooltip({ originalStatus, pendingDetail, formatStatus, t
   );
 }
 
-/**
- * Applies pending details to task summary metrics, updating RT, CO, PR counts and task lists in real time.
- */
+function createEmptyMetricBucket(bucket) {
+  return {
+    ...bucket,
+    rt: 0,
+    co: 0,
+    pr: 0,
+    rt_tasks: [],
+    co_tasks: [],
+    pr_tasks: [],
+  };
+}
+
 export function applyPendingDetailsToTaskSummaryMetrics(
   metrics,
   tasks,
@@ -300,33 +302,9 @@ export function applyPendingDetailsToTaskSummaryMetrics(
     const orig = metrics[dateKey];
     updated[dateKey] = {
       ...orig,
-      dry: {
-        ...orig?.dry,
-        rt: 0,
-        co: 0,
-        pr: 0,
-        rt_tasks: [],
-        co_tasks: [],
-        pr_tasks: [],
-      },
-      frozen: {
-        ...orig?.frozen,
-        rt: 0,
-        co: 0,
-        pr: 0,
-        rt_tasks: [],
-        co_tasks: [],
-        pr_tasks: [],
-      },
-      unknown: {
-        ...orig?.unknown,
-        rt: 0,
-        co: 0,
-        pr: 0,
-        rt_tasks: [],
-        co_tasks: [],
-        pr_tasks: [],
-      },
+      dry: createEmptyMetricBucket(orig?.dry),
+      frozen: createEmptyMetricBucket(orig?.frozen),
+      unknown: createEmptyMetricBucket(orig?.unknown),
     };
   });
 

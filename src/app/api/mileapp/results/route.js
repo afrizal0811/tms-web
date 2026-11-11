@@ -2,6 +2,47 @@ import prisma from '@/lib/prisma';
 import { formatUTC7, getBasePlate, getDeliveryDateFromRouting, isEmpty } from '@/lib/utils';
 import { NextResponse } from 'next/server';
 
+const STRIPPED_TRIP_FIELDS = [
+  'etaStr',
+  'etdStr',
+  'allowOddEven',
+  'timeWindow',
+  'visitGroup',
+  'visitGroupPriority',
+  'tags',
+];
+
+const STRIPPED_ROUTE_FIELDS = [
+  'workingTime',
+  'breakTime',
+  'vehicleTags',
+  'oddEven',
+  'isOddEven',
+  'speed',
+  'fixedCost',
+  'totalNodes',
+  'totalTrips',
+  'finishTime',
+];
+
+const parseJsonObject = (val, fallback = {}) => {
+  if (typeof val === 'string') return JSON.parse(val || '{}');
+  return val || fallback;
+};
+
+const normalizeHubId = (val) =>
+  val && String(val).trim() !== '' && val !== 'undefined' ? String(val).trim() : null;
+
+const toKm = (m) => parseFloat(((m || 0) / 1000).toFixed(2));
+
+const toPct = (val, max) => parseFloat((max ? ((val || 0) / max) * 100 : 0).toFixed(2));
+
+const toHr = (mins) => {
+  const h = Math.floor((mins || 0) / 60);
+  const m = Math.floor((mins || 0) % 60);
+  return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
+};
+
 const formatRoutingHistories = (rawHistory) => {
   const grouped = {
     move: [],
@@ -61,12 +102,12 @@ export async function GET(request) {
     if (deliveryDate) {
       where.delivery_date = deliveryDate;
     } else if (dateFrom && dateTo) {
-      const fromStr = dateFrom.split(' ')[0].split('T')[0];
-      const toStr = dateTo.split(' ')[0].split('T')[0];
-      where.delivery_date = { gte: fromStr, lte: toStr };
+      where.delivery_date = {
+        gte: dateFrom.split(/[ T]/)[0],
+        lte: dateTo.split(/[ T]/)[0],
+      };
     } else if (dateFrom) {
-      const fromStr = dateFrom.split(' ')[0].split('T')[0];
-      where.delivery_date = { gte: fromStr };
+      where.delivery_date = { gte: dateFrom.split(/[ T]/)[0] };
     }
 
     if (hubId && hubId !== 'all') {
@@ -108,16 +149,9 @@ export async function GET(request) {
     }
 
     const formattedData = routingResults.map((item) => {
-      const hubTimes =
-        typeof item.hub_times === 'string'
-          ? JSON.parse(item.hub_times || '{}')
-          : item.hub_times || {};
-      const totalDistance =
-        typeof item.total_distance === 'string'
-          ? JSON.parse(item.total_distance || '{}')
-          : item.total_distance || {};
-      const timeData =
-        typeof item.time === 'string' ? JSON.parse(item.time || '{}') : item.time || {};
+      const hubTimes = parseJsonObject(item.hub_times);
+      const totalDistance = parseJsonObject(item.total_distance);
+      const timeData = parseJsonObject(item.time);
 
       const formattedTime = {};
       for (const [p, t] of Object.entries(timeData)) {
@@ -134,14 +168,8 @@ export async function GET(request) {
         taskCountMap.get(item.delivery_date) ??
         0;
 
-      const syncUser =
-        typeof item.sync_user === 'string'
-          ? JSON.parse(item.sync_user || '{}')
-          : item.sync_user || {};
-      const routeUser =
-        typeof item.route_user === 'string'
-          ? JSON.parse(item.route_user || '{}')
-          : item.route_user || {};
+      const syncUser = parseJsonObject(item.sync_user);
+      const routeUser = parseJsonObject(item.route_user);
 
       return {
         id: item.id,
@@ -254,6 +282,223 @@ const getDeliveryDate = async (item, apiUrl, apiToken) => {
   return majorityDate;
 };
 
+async function buildDriversMap(hubId) {
+  const hubFilter = hubId && hubId !== 'all' ? { hub_id: String(hubId) } : {};
+  const vehicleHubFilter = hubId && hubId !== 'all' ? { hubs_id: String(hubId) } : {};
+  const [rawDrivers, vehiclesList] = await Promise.all([
+    prisma.driverList.findMany({ where: hubFilter }),
+    prisma.vehicle.findMany({ where: vehicleHubFilter }),
+  ]);
+
+  const vehicleByDriverId = new Map(
+    vehiclesList.filter((v) => v.driver_id).map((v) => [v.driver_id, v])
+  );
+  const driversMap = {};
+  rawDrivers.forEach((d) => {
+    const email = (d.email || '').toLowerCase().trim();
+    if (email && email !== '-') {
+      const v = vehicleByDriverId.get(d.id);
+      driversMap[email] = { name: d.name, plat: v ? getBasePlate(v.license_number) : null };
+    }
+  });
+
+  if (rawDrivers.length === 0) {
+    const fallbackDrivers = await prisma.driver.findMany({
+      where: hubId && hubId !== 'all' ? { hubs: { some: { id: hubId } } } : {},
+    });
+    fallbackDrivers.forEach((d) => {
+      const email = (d.email || '').toLowerCase().trim();
+      if (email && email !== '-' && !driversMap[email]) {
+        driversMap[email] = { name: d.name, plat: getBasePlate(d.plat) };
+      }
+    });
+  }
+
+  return driversMap;
+}
+
+function cleanRoutingEntries(routing, driversMap) {
+  return (routing || []).map((r) => {
+    let tW = 0,
+      tV = 0,
+      tD = 0,
+      tTr = 0,
+      tVi = 0,
+      tWa = 0;
+
+    if (r.trips && r.trips.length > 0) {
+      const lastHubWait = Number(r.trips[r.trips.length - 1].waitingTime) || 0;
+      if ((Number(r.trips[0].waitingTime) || 0) <= 0) {
+        r.trips[0].waitingTime = lastHubWait;
+      }
+
+      r.trips = r.trips.map((t, i) => {
+        if (t.isHub === false && t.visitId?.startsWith('taskId-')) {
+          t.visitId = t.visitId.replace('taskId-', '');
+        }
+
+        const tripTravel = Number(t.travelTime) || 0;
+        const tripVisit = Number(t.visitTime) || 0;
+        const tripWait = Number(t.waitingTime) || 0;
+
+        if (!t.isHub) {
+          tW += t.weight || 0;
+          tV += t.volume || 0;
+        }
+        tD += t.distance || 0;
+        tTr += tripTravel;
+        tVi += tripVisit;
+        if (i !== r.trips.length - 1) {
+          tWa += tripWait;
+        }
+
+        t.travelTime = tripTravel;
+        t.visitTime = tripVisit;
+        t.waitingTime = tripWait;
+        t.spentTime = tripTravel + tripVisit + tripWait;
+
+        for (const field of STRIPPED_TRIP_FIELDS) {
+          delete t[field];
+        }
+        return t;
+      });
+    }
+
+    const spent = tTr + tVi + tWa;
+    r.totalWeight = isEmpty(tW) ? 0 : Number(tW).toFixed(2);
+    r.totalVolume = isEmpty(tV) ? 0 : Number(tV).toFixed(2);
+    r.weightPercentage = toPct(tW, r.vehicleMaxWeight);
+    r.volumePercentage = toPct(tV, r.vehicleMaxVolume);
+    r.totalDistance = tD;
+    r.distanceKm = toKm(tD);
+    r.totalTravelTime = tTr;
+    r.travelHour = toHr(tTr);
+    r.totalVisitTime = tVi;
+    r.visitHour = toHr(tVi);
+    r.totalWaitingTime = tWa;
+    r.waitingHour = toHr(tWa);
+    r.totalSpentTime = spent;
+    r.spentHour = toHr(spent);
+
+    const email = (r.assignee || '').toLowerCase().trim();
+    r.driverName = driversMap[email]?.name || null;
+    if (!r.basePlat && !r.vehicleName) {
+      r.basePlat = driversMap[email]?.plat || null;
+    } else {
+      r.basePlat = getBasePlate(r.basePlat || r.vehicleName);
+    }
+
+    for (const field of STRIPPED_ROUTE_FIELDS) {
+      delete r[field];
+    }
+
+    return r;
+  });
+}
+
+function buildTripMaps(activeVehicles, seenVehicles) {
+  const totalDistanceMap = {};
+  const timeMap = {};
+  const hubTimesMap = {};
+
+  for (const r of activeVehicles) {
+    const taskIds = (r.trips || [])
+      .filter((t) => !t.isHub && t.visitId)
+      .map((t) => String(t.visitId));
+
+    const vehicleName = r.vehicleName || r.basePlat || '-';
+    const vehicleKey = (r.vehicleId ? String(r.vehicleId).trim() : vehicleName)
+      .toLowerCase()
+      .trim();
+    const tripSignature = [...taskIds].sort().join(',');
+
+    const existingTrips = seenVehicles.get(vehicleKey);
+    if (existingTrips && existingTrips.has(tripSignature)) {
+      continue;
+    }
+
+    if (!seenVehicles.has(vehicleKey)) {
+      seenVehicles.set(vehicleKey, new Set());
+    }
+    seenVehicles.get(vehicleKey).add(tripSignature);
+
+    const plateKey = r.basePlat || getBasePlate(r.vehicleName) || vehicleName;
+
+    totalDistanceMap[plateKey] = Number(r.totalDistance) || 0;
+    timeMap[plateKey] = {
+      spent_time: Number(r.totalSpentTime) || 0,
+      visit_time: Number(r.totalVisitTime) || 0,
+      travel_time: Number(r.totalTravelTime) || 0,
+      waiting_time: Number(r.totalWaitingTime) || 0,
+    };
+
+    const rawHubTrips = (r.trips || []).filter((t) => t.isHub === true);
+    const middleCount = rawHubTrips.length - 2;
+    let middleIndex = 0;
+
+    hubTimesMap[plateKey] = rawHubTrips.map((t, idx) => {
+      let category;
+      if (idx === 0) {
+        category = 'first';
+      } else if (idx === rawHubTrips.length - 1) {
+        category = 'last';
+      } else {
+        middleIndex++;
+        category = middleCount === 1 ? 'middle' : `middle_${middleIndex}`;
+      }
+
+      return {
+        visitId: t.visitId,
+        isHub: true,
+        order: t.order ?? idx,
+        eta: t.eta || null,
+        etd: t.etd || null,
+        category,
+      };
+    });
+  }
+
+  return { totalDistanceMap, timeMap, hubTimesMap };
+}
+
+async function fetchRoutingHistories(resultId, apiUrl, apiToken) {
+  const emptyHistory = {
+    total: 0,
+    history: { move: [], dropped: [], switch: [], manual: [], change: [] },
+  };
+  try {
+    const histResponse = await fetch(`${apiUrl}/result/${resultId}/history`, {
+      headers: {
+        Authorization: `Bearer ${apiToken}`,
+        'Content-Type': 'application/json',
+      },
+      cache: 'no-store',
+    });
+    if (!histResponse.ok) return emptyHistory;
+    const histJson = await histResponse.json();
+    return formatRoutingHistories(histJson.data || []);
+  } catch (histError) {
+    console.error(`Error fetching history for ${resultId}:`, histError);
+    return emptyHistory;
+  }
+}
+
+function formatDroppedData(rawDropped) {
+  const list = Array.isArray(rawDropped) ? rawDropped : [];
+  return {
+    total: list.length,
+    data: list.map((d) => ({
+      id: d.refId || (typeof d.id === 'string' ? d.id.replace(/_\d+$/, '') : d.id),
+      name: d.name || d.visitName || '',
+      tags: d.tags || [],
+      reason: d.reason || '',
+      address: d.address || '',
+      capacity: d.capacity ?? null,
+      timeWindow: d.timeWindow ?? null,
+    })),
+  };
+}
+
 export async function POST(request) {
   try {
     const body = await request.json();
@@ -265,24 +510,6 @@ export async function POST(request) {
         { error: 'Parameter "deliveryDate" (format YYYY-MM-DD) dibutuhkan.' },
         { status: 400 }
       );
-    }
-
-    if (!force) {
-      const existingRouting = await prisma.routingResult.findFirst({
-        where: {
-          delivery_date: deliveryDate,
-          ...(hubId && hubId !== 'all' ? { hub_id: String(hubId) } : {}),
-        },
-        select: { id: true },
-      });
-
-      if (existingRouting) {
-        return NextResponse.json({
-          message: `Data routing untuk tanggal pengiriman ${deliveryDate} sudah ada di database, dilewati.`,
-          skipped: true,
-          syncedCount: 0,
-        });
-      }
     }
 
     const apiUrl = process.env.NEXT_PUBLIC_API_URL;
@@ -359,46 +586,7 @@ export async function POST(request) {
       });
     }
 
-    const [rawDrivers, vehiclesList] = await Promise.all([
-      prisma.driverList.findMany({
-        where: hubId && hubId !== 'all' ? { hub_id: String(hubId) } : {},
-      }),
-      prisma.vehicle.findMany({
-        where: hubId && hubId !== 'all' ? { hubs_id: String(hubId) } : {},
-      }),
-    ]);
-
-    const vehicleByDriverId = new Map(
-      vehiclesList.filter((v) => v.driver_id).map((v) => [v.driver_id, v])
-    );
-    const driversMap = {};
-    rawDrivers.forEach((d) => {
-      const email = (d.email || '').toLowerCase().trim();
-      if (email && email !== '-') {
-        const v = vehicleByDriverId.get(d.id);
-        driversMap[email] = { name: d.name, plat: v ? getBasePlate(v.license_number) : null };
-      }
-    });
-
-    if (rawDrivers.length === 0) {
-      const fallbackDrivers = await prisma.driver.findMany({
-        where: hubId && hubId !== 'all' ? { hubs: { some: { id: hubId } } } : {},
-      });
-      fallbackDrivers.forEach((d) => {
-        const email = (d.email || '').toLowerCase().trim();
-        if (email && email !== '-' && !driversMap[email]) {
-          driversMap[email] = { name: d.name, plat: getBasePlate(d.plat) };
-        }
-      });
-    }
-
-    const toKm = (m) => parseFloat(((m || 0) / 1000).toFixed(2));
-    const toPct = (val, max) => parseFloat((max ? ((val || 0) / max) * 100 : 0).toFixed(2));
-    const toHr = (mins) => {
-      const h = Math.floor((mins || 0) / 60);
-      const m = Math.floor((mins || 0) % 60);
-      return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
-    };
+    const driversMap = await buildDriversMap(hubId);
 
     const targetResultIds = targetResults.map((t) => String(t._id));
     if (force) {
@@ -417,107 +605,10 @@ export async function POST(request) {
     const skippedRecords = [];
 
     for (const item of targetResults) {
-      const vehiclePlatesSet = new Set();
-      const driverEmailsSet = new Set();
-
-      const cleanedRouting = (item.result?.routing || []).map((r) => {
-        let tW = 0,
-          tV = 0,
-          tD = 0,
-          tTr = 0,
-          tVi = 0,
-          tWa = 0;
-
-        if (r.trips && r.trips.length > 0) {
-          const lastHubWait = Number(r.trips[r.trips.length - 1].waitingTime) || 0;
-          if ((Number(r.trips[0].waitingTime) || 0) <= 0) {
-            r.trips[0].waitingTime = lastHubWait;
-          }
-
-          r.trips = r.trips.map((t, i) => {
-            if (t.isHub === false && t.visitId?.startsWith('taskId-')) {
-              t.visitId = t.visitId.replace('taskId-', '');
-            }
-
-            const tripTravel = Number(t.travelTime) || 0;
-            const tripVisit = Number(t.visitTime) || 0;
-            const tripWait = Number(t.waitingTime) || 0;
-
-            if (!t.isHub) {
-              tW += t.weight || 0;
-              tV += t.volume || 0;
-            }
-            tD += t.distance || 0;
-            tTr += tripTravel;
-            tVi += tripVisit;
-            if (i !== r.trips.length - 1) {
-              tWa += tripWait;
-            }
-
-            t.travelTime = tripTravel;
-            t.visitTime = tripVisit;
-            t.waitingTime = tripWait;
-            t.spentTime = tripTravel + tripVisit + tripWait;
-
-            delete t.etaStr;
-            delete t.etdStr;
-            delete t.allowOddEven;
-            delete t.timeWindow;
-            delete t.visitGroup;
-            delete t.visitGroupPriority;
-            delete t.tags;
-            return t;
-          });
-        }
-
-        const spent = tTr + tVi + tWa;
-        r.totalWeight = isEmpty(tW) ? 0 : Number(tW).toFixed(2);
-        r.totalVolume = isEmpty(tV) ? 0 : Number(tV).toFixed(2);
-        r.weightPercentage = toPct(tW, r.vehicleMaxWeight);
-        r.volumePercentage = toPct(tV, r.vehicleMaxVolume);
-        r.totalDistance = tD;
-        r.distanceKm = toKm(tD);
-        r.totalTravelTime = tTr;
-        r.travelHour = toHr(tTr);
-        r.totalVisitTime = tVi;
-        r.visitHour = toHr(tVi);
-        r.totalWaitingTime = tWa;
-        r.waitingHour = toHr(tWa);
-        r.totalSpentTime = spent;
-        r.spentHour = toHr(spent);
-
-        const email = (r.assignee || '').toLowerCase().trim();
-        if (email) driverEmailsSet.add(email);
-
-        r.driverName = driversMap[email]?.name || null;
-        if (!r.basePlat && !r.vehicleName) {
-          r.basePlat = driversMap[email]?.plat || null;
-        } else {
-          r.basePlat = getBasePlate(r.basePlat || r.vehicleName);
-        }
-
-        if (r.basePlat && r.basePlat !== '-') {
-          vehiclePlatesSet.add(r.basePlat);
-        }
-
-        delete r.workingTime;
-        delete r.breakTime;
-        delete r.vehicleTags;
-        delete r.oddEven;
-        delete r.isOddEven;
-        delete r.speed;
-        delete r.fixedCost;
-        delete r.totalNodes;
-        delete r.totalTrips;
-        delete r.finishTime;
-
-        return r;
-      });
-
-      const activeVehicles = cleanedRouting.filter((r) => {
-        const customerTrips = (r.trips || []).filter((t) => !t.isHub && t.visitId);
-        return customerTrips.length > 0;
-      });
+      const cleanedRouting = cleanRoutingEntries(item.result?.routing, driversMap);
+      const activeVehicles = cleanedRouting.filter((r) =>
+        (r.trips || []).some((t) => !t.isHub && t.visitId)
+      );
 
       const rawUser = typeof item.user === 'object' ? item.user?.name : item.user || null;
       const routeUser = {
@@ -525,75 +616,14 @@ export async function POST(request) {
         created_at: item.createdTime ? formatUTC7(item.createdTime, 'YYYY-MM-DDTHH:mm:ss') : null,
       };
 
-      const totalDistanceMap = {};
-      const timeMap = {};
-      const hubTimesMap = {};
-
-      for (const r of activeVehicles) {
-        const taskIds = (r.trips || [])
-          .filter((t) => !t.isHub && t.visitId)
-          .map((t) => String(t.visitId));
-
-        const vehicleName = r.vehicleName || r.basePlat || '-';
-        const vehicleKey = (r.vehicleId ? String(r.vehicleId).trim() : vehicleName)
-          .toLowerCase()
-          .trim();
-        const tripSignature = [...taskIds].sort().join(',');
-
-        const existingTrips = seenVehicles.get(vehicleKey);
-        if (existingTrips && existingTrips.has(tripSignature)) {
-          continue;
-        }
-
-        if (!seenVehicles.has(vehicleKey)) {
-          seenVehicles.set(vehicleKey, new Set());
-        }
-        seenVehicles.get(vehicleKey).add(tripSignature);
-
-        const plateKey = r.basePlat || getBasePlate(r.vehicleName) || vehicleName;
-
-        totalDistanceMap[plateKey] = Number(r.totalDistance) || 0;
-
-        timeMap[plateKey] = {
-          spent_time: Number(r.totalSpentTime) || 0,
-          visit_time: Number(r.totalVisitTime) || 0,
-          travel_time: Number(r.totalTravelTime) || 0,
-          waiting_time: Number(r.totalWaitingTime) || 0,
-        };
-
-        const rawHubTrips = (r.trips || []).filter((t) => t.isHub === true);
-        const middleCount = rawHubTrips.length - 2;
-        let middleIndex = 0;
-
-        hubTimesMap[plateKey] = rawHubTrips.map((t, idx) => {
-          let category;
-          if (idx === 0) {
-            category = 'first';
-          } else if (idx === rawHubTrips.length - 1) {
-            category = 'last';
-          } else {
-            middleIndex++;
-            category = middleCount === 1 ? 'middle' : `middle_${middleIndex}`;
-          }
-
-          return {
-            visitId: t.visitId,
-            isHub: true,
-            order: t.order ?? idx,
-            eta: t.eta || null,
-            etd: t.etd || null,
-            category,
-          };
-        });
-      }
+      const { totalDistanceMap, timeMap, hubTimesMap } = buildTripMaps(
+        activeVehicles,
+        seenVehicles
+      );
 
       const targetHubId =
-        (item.hubId && String(item.hubId).trim() !== '' && item.hubId !== 'undefined'
-          ? String(item.hubId).trim()
-          : null) ||
-        (hubId && String(hubId).trim() !== '' && hubId !== 'undefined'
-          ? String(hubId).trim()
-          : null) ||
+        normalizeHubId(item.hubId) ||
+        normalizeHubId(hubId) ||
         item.result?.routing?.[0]?.trips
           ?.find((t) => t.isHub && t.visitId?.startsWith('hub-'))
           ?.visitId?.replace('hub-', '') ||
@@ -603,41 +633,8 @@ export async function POST(request) {
         throw new Error(`Hub ID tidak ditemukan untuk data routing "${item.name || item._id}".`);
       }
 
-      let historiesData = {
-        total: 0,
-        history: { move: [], dropped: [], switch: [], manual: [], change: [] },
-      };
-
-      try {
-        const histResponse = await fetch(`${apiUrl}/result/${item._id}/history`, {
-          headers: {
-            Authorization: `Bearer ${apiToken}`,
-            'Content-Type': 'application/json',
-          },
-          cache: 'no-store',
-        });
-        if (histResponse.ok) {
-          const histJson = await histResponse.json();
-          historiesData = formatRoutingHistories(histJson.data || []);
-        }
-      } catch (histError) {
-        console.error(`Error fetching history for ${item._id}:`, histError);
-      }
-
-      const rawDropped = Array.isArray(item.result?.dropped) ? item.result.dropped : [];
-      const droppedCount = rawDropped.length;
-      const droppedData = {
-        total: droppedCount,
-        data: rawDropped.map((d) => ({
-          id: d.refId || (typeof d.id === 'string' ? d.id.replace(/_\d+$/, '') : d.id),
-          name: d.name || d.visitName || '',
-          tags: d.tags || [],
-          reason: d.reason || '',
-          address: d.address || '',
-          capacity: d.capacity ?? null,
-          timeWindow: d.timeWindow ?? null,
-        })),
-      };
+      const historiesData = await fetchRoutingHistories(item._id, apiUrl, apiToken);
+      const droppedData = formatDroppedData(item.result?.dropped);
 
       const nowIso = formatUTC7(new Date(), 'YYYY-MM-DDTHH:mm:ss');
       const existingRouting = await prisma.routingResult.findUnique({
@@ -671,9 +668,7 @@ export async function POST(request) {
       }
 
       const existingSyncUser = existingRouting?.sync_user
-        ? typeof existingRouting.sync_user === 'string'
-          ? JSON.parse(existingRouting.sync_user)
-          : existingRouting.sync_user
+        ? parseJsonObject(existingRouting.sync_user, null)
         : null;
 
       const syncUser = {

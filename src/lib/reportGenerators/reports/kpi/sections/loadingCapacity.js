@@ -103,6 +103,52 @@ export function calculateLoadingCapacity(
     });
   }
 
+  const processedTrucks = new Set(Object.keys(activeVehicles));
+  if (Array.isArray(tasksData)) {
+    tasksData.forEach((task) => {
+      const truckId = task.basePlat || task.vehicleName || task.plat || task.driverName || null;
+      if (!truckId || processedTrucks.has(truckId)) return;
+      processedTrucks.add(truckId);
+
+      const foundDriver = (driverData || []).find(
+        (d) =>
+          (d.plat && d.plat.replace(/\s+/g, '').toLowerCase() === truckId.replace(/\s+/g, '').toLowerCase()) ||
+          (d.basePlat && d.basePlat.replace(/\s+/g, '').toLowerCase() === truckId.replace(/\s+/g, '').toLowerCase())
+      );
+      const email = normalizeEmail(foundDriver?.email || task.assignee || '');
+      const info = driverInfoMap[email];
+
+      let category = (task.typeStorage || task.storage || '').toUpperCase();
+      if (!category.includes('DRY') && !category.includes('FRZ') && !category.includes('FROZEN')) {
+        const route = { basePlat: truckId, vehicleName: truckId };
+        category = resolveRouteCategory(route, null, tasksData, driverData, driverMap);
+      }
+      category = category.includes('DRY') ? 'DRY' : category.includes('FRZ') || category.includes('FROZEN') ? 'FROZEN' : category;
+
+      const routeTasks = tasksData.filter(
+        (t) => (t.basePlat || t.vehicleName || t.plat || t.driverName) === truckId
+      );
+      const taskWeight = routeTasks.reduce((s, t) => s + (Number(t.weightKg) || 0), 0);
+      const taskVol = routeTasks.reduce((s, t) => s + (Number(t.volumeCbm) || 0), 0);
+      const routeWeight = safeNum(taskWeight);
+      const routeVolume = safeNum(taskVol);
+
+      activeVehicles[truckId] = {
+        maxWeight: safeNum(foundDriver?.maxWeight ?? info?.maxWeight ?? 0),
+        maxVolume: safeNum(foundDriver?.maxVolume ?? info?.maxVolume ?? 0),
+        category,
+      };
+
+      if (category === 'DRY') {
+        actWeightDry = safeAdd(actWeightDry, routeWeight);
+        actVolDry = safeAdd(actVolDry, routeVolume);
+      } else if (category === 'FROZEN') {
+        actWeightFrz = safeAdd(actWeightFrz, routeWeight);
+        actVolFrz = safeAdd(actVolFrz, routeVolume);
+      }
+    });
+  }
+
   Object.values(activeVehicles).forEach((vehicle) => {
     if (vehicle.category === 'DRY') {
       capWeightDry = safeAdd(capWeightDry, vehicle.maxWeight);

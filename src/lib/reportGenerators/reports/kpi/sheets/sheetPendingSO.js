@@ -1,4 +1,8 @@
-import { normalizeDeliveryStatus } from '@/lib/deliveryStatus';
+import {
+  DELIVERY_STATUS_KEYS,
+  isTaskUnassigned,
+  normalizeDeliveryStatus,
+} from '@/lib/deliveryStatus';
 import {
   formatDateUniversal,
   getBasePlate,
@@ -12,16 +16,11 @@ export function generateSheetPendingSO(tasksData, driverData) {
 
   if (Array.isArray(tasksData)) {
     tasksData.forEach((task) => {
-      let isPending = normalizeDeliveryStatus(task.statusDelivery) === 'PENDING';
-
-      if (!isPending) {
-        let statusGr = '';
-        if (task.statusGr) {
-          statusGr =
-            typeof task.statusGr === 'string' ? task.statusGr.split(',')[0].trim() : task.statusGr;
-        }
-        isPending = normalizeDeliveryStatus(statusGr) === 'PENDING';
-      }
+      if (isTaskUnassigned(task)) return;
+      const pd = task.pendingDetail;
+      const effectiveStatus = pd?.new_status || task.statusDelivery || task.status;
+      const norm = normalizeDeliveryStatus(effectiveStatus);
+      const isPending = norm === DELIVERY_STATUS_KEYS.PENDING;
 
       if (isPending) {
         let driverName = task.driverName;

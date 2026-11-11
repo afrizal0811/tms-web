@@ -187,8 +187,12 @@ export default function DataSync({ children }) {
 
         if (isInitialSync) {
           setStatus('common.routing');
-          await sync(['results'], todayStr, 15000).catch((err) =>
-            console.warn('[DataSync] Routing sync error:', err.message)
+          await Promise.allSettled(
+            [...pastDates, todayStr].map((dStr) =>
+              sync(['results'], dStr, 15000).catch((err) =>
+                console.warn('[DataSync] Routing sync error:', err.message)
+              )
+            )
           );
 
           setStatus('common.driver');
@@ -237,7 +241,13 @@ export default function DataSync({ children }) {
             dateFrom: pastDates[0],
             dateTo: yesterdayStr,
           }).catch(() => []);
-          const existingDates = new Set((existingKpiList || []).map((k) => k.date));
+          const existingDates = new Set(
+            (existingKpiList || [])
+              .filter(
+                (k) => (k.total_truck || 0) > 0 || (k.task_dry || 0) > 0 || (k.task_frz || 0) > 0
+              )
+              .map((k) => k.date)
+          );
 
           for (const dStr of pastDates) {
             if (!existingDates.has(dStr)) {
@@ -318,16 +328,19 @@ export default function DataSync({ children }) {
           data={uncompletedPendingTasks}
           reasons={pendingReasonsList}
           onClose={() => setUncompletedPendingTasks([])}
-          onSuccess={() => {
-            setUncompletedPendingTasks([]);
+          onSuccess={async () => {
             const { storedLocation, storedUser } = getLocalStorage();
             const targetDate = pendingDateRef.current;
             if (storedLocation && targetDate) {
-              processKpiData({
-                hubId: storedLocation,
-                deliveryDate: targetDate,
-                userName: storedUser?.name || 'system',
-              }).catch((err) => console.warn('[DataSync] Async KPI retry error:', err.message));
+              try {
+                await processKpiData({
+                  hubId: storedLocation,
+                  deliveryDate: targetDate,
+                  userName: storedUser?.name || 'system',
+                });
+              } catch (err) {
+                console.warn('[DataSync] Async KPI retry error:', err.message);
+              }
             }
           }}
         />

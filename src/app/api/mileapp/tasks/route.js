@@ -10,6 +10,66 @@ import {
 import { resolveUserName } from '../help';
 import { NextResponse } from 'next/server';
 
+const TASK_TIMESTAMP_FIELDS = [
+  'startTime',
+  'endTime',
+  'assignedTime',
+  'doneTime',
+  'createdTime',
+  'updatedTime',
+  'klikJikaSudahSampai',
+  'page1DoneTime',
+  'page2DoneTime',
+  'page3DoneTime',
+];
+
+const STRIPPED_TASK_FIELDS = ['assignedVehicle', 'parentId', 'subId', 'label', 'taskType'];
+
+function parseJsonField(val, fallback = {}) {
+  if (typeof val === 'string') return JSON.parse(val || '{}');
+  return val || fallback;
+}
+
+function extractDatePart(val) {
+  if (!val) return '';
+  return val.split(/[ T]/)[0] || '';
+}
+
+function resolveTaskDeliveryDate(t, existingTask, routingDateMap) {
+  const routingResultId = t.routingResultId || existingTask?.routing_result_id || null;
+  const routingDeliveryDate = routingResultId ? routingDateMap.get(routingResultId) : null;
+  if (routingDeliveryDate) return routingDeliveryDate;
+
+  const baseDate = extractDatePart(t.startTime || t.createdTime || '');
+  if (!baseDate) return '';
+
+  const d = new Date(`${baseDate}T00:00:00Z`);
+  if (d.getUTCDay() !== 0) return baseDate;
+
+  const actualDate = extractDatePart(
+    t.klikJikaSudahSampai ||
+      t.arrival_time ||
+      t.doneTime ||
+      existingTask?.arrival_time ||
+      existingTask?.done_time
+  );
+  if (actualDate && new Date(`${actualDate}T00:00:00Z`).getUTCDay() !== 0) {
+    return actualDate;
+  }
+
+  const flow = String(t.flow || existingTask?.flow || '').toLowerCase();
+  const createdBy = String(t.createdBy || existingTask?.created_by || '').toLowerCase();
+  const isReDelivery = flow.includes('re delivery');
+  const isAutomation = createdBy.includes('system') || createdBy.includes('automation');
+
+  if (isReDelivery || isAutomation) {
+    d.setUTCDate(d.getUTCDate() + 1);
+    return d.toISOString().split('T')[0];
+  }
+
+  return baseDate;
+}
+
 function getUtcRange(dateStr, offsetHours = 7) {
   if (!dateStr) return { timeFrom: null, timeTo: null };
   const [y, m, d] = dateStr.split('-').map(Number);
@@ -35,20 +95,13 @@ function getLocalDateFromUtcString(utcStr, offsetHours = 7) {
 
 function formatDbTask(dbTask) {
   const cust = parseCustomerString(dbTask.customer_order);
-  const others =
-    typeof dbTask.others === 'string' ? JSON.parse(dbTask.others || '{}') : dbTask.others || {};
+  const others = parseJsonField(dbTask.others);
   const listProduct =
     typeof dbTask.list_product === 'string'
       ? JSON.parse(dbTask.list_product || '[]')
       : dbTask.list_product || [];
-  const syncUser =
-    typeof dbTask.sync_user === 'string'
-      ? JSON.parse(dbTask.sync_user || '{}')
-      : dbTask.sync_user || {};
-  const taskUser =
-    typeof dbTask.task_user === 'string'
-      ? JSON.parse(dbTask.task_user || '{}')
-      : dbTask.task_user || {};
+  const syncUser = parseJsonField(dbTask.sync_user);
+  const taskUser = parseJsonField(dbTask.task_user);
 
   return {
     _id: dbTask.id,
@@ -145,6 +198,8 @@ async function saveTasks(tasks, targetHubId, currentUser = 'System') {
             id: true,
             status: true,
             status_delivery: true,
+            delivery_date: true,
+            flow: true,
             routing_result_id: true,
             driver_name: true,
             plat: true,
@@ -156,6 +211,7 @@ async function saveTasks(tasks, targetHubId, currentUser = 'System') {
             done_coordinate: true,
             task_user: true,
             sync_user: true,
+            created_from: true,
           },
         })
       : [],
@@ -163,6 +219,25 @@ async function saveTasks(tasks, targetHubId, currentUser = 'System') {
 
   const validHubSet = new Set(existingHubs.map((h) => h.id));
   const existingTaskMap = new Map(existingTasks.map((t) => [t.id, t]));
+
+  const routingResultIds = Array.from(
+    new Set(
+      tasksToProcess
+        .map(
+          (t) => t.routingResultId || existingTaskMap.get(String(t._id || t.id))?.routing_result_id
+        )
+        .filter(Boolean)
+    )
+  );
+
+  const routingResults =
+    routingResultIds.length > 0
+      ? await prisma.routingResult.findMany({
+          where: { id: { in: routingResultIds } },
+          select: { id: true, delivery_date: true },
+        })
+      : [];
+  const routingDateMap = new Map(routingResults.map((r) => [r.id, r.delivery_date]));
 
   const nowIso = formatUTC7(new Date(), 'YYYY-MM-DDTHH:mm:ss');
   let insertedCount = 0;
@@ -176,8 +251,7 @@ async function saveTasks(tasks, targetHubId, currentUser = 'System') {
     if (t.updatedBy && t.updatedBy.includes('@')) uniqueEmails.add(t.updatedBy);
   });
   existingTasks.forEach((et) => {
-    const su =
-      typeof et.sync_user === 'string' ? JSON.parse(et.sync_user || '{}') : et.sync_user || {};
+    const su = parseJsonField(et.sync_user);
     if (su.created_by && su.created_by.includes('@')) uniqueEmails.add(su.created_by);
     if (su.updated_by && su.updated_by.includes('@')) uniqueEmails.add(su.updated_by);
   });
@@ -214,11 +288,7 @@ async function saveTasks(tasks, targetHubId, currentUser = 'System') {
       if (!resolvedHubId) return Promise.resolve(null);
 
       const routingResultId = t.routingResultId || existingTask?.routing_result_id || null;
-
-      const dateSource = t.startTime || t.createdTime || '';
-      const deliveryDate = dateSource.includes('T')
-        ? dateSource.split('T')[0]
-        : dateSource.split(' ')[0] || '';
+      const deliveryDate = resolveTaskDeliveryDate(t, existingTask, routingDateMap);
 
       const others = {
         doneOrder: t.doneOrder ?? null,
@@ -244,14 +314,12 @@ async function saveTasks(tasks, targetHubId, currentUser = 'System') {
       };
 
       if (existingTask) {
-        const existingTaskUser =
-          typeof existingTask.task_user === 'string'
-            ? JSON.parse(existingTask.task_user)
-            : existingTask.task_user || {};
+        const existingTaskUser = parseJsonField(existingTask.task_user);
 
         const sameRouting = routingResultId === (existingTask.routing_result_id || null);
 
         const isFieldChanged =
+          deliveryDate !== (existingTask.delivery_date || '') ||
           (t.status || null) !== (existingTask.status || null) ||
           (t.statusDelivery || null) !== (existingTask.status_delivery || null) ||
           !sameRouting ||
@@ -270,9 +338,7 @@ async function saveTasks(tasks, targetHubId, currentUser = 'System') {
       }
 
       const existingSyncUser = existingTask?.sync_user
-        ? typeof existingTask.sync_user === 'string'
-          ? JSON.parse(existingTask.sync_user)
-          : existingTask.sync_user
+        ? parseJsonField(existingTask.sync_user, null)
         : null;
 
       const syncUser = {
@@ -493,20 +559,9 @@ async function fetchAndEnrichTasks({
   allTasks.sort((a, b) => new Date(a.createdTime || 0) - new Date(b.createdTime || 0));
 
   allTasks.forEach((task) => {
-    if (task.startTime) task.startTime = formatUTC7(task.startTime, 'YYYY-MM-DDTHH:mm:ss');
-    if (task.endTime) task.endTime = formatUTC7(task.endTime, 'YYYY-MM-DDTHH:mm:ss');
-    if (task.assignedTime) task.assignedTime = formatUTC7(task.assignedTime, 'YYYY-MM-DDTHH:mm:ss');
-    if (task.doneTime) task.doneTime = formatUTC7(task.doneTime, 'YYYY-MM-DDTHH:mm:ss');
-    if (task.createdTime) task.createdTime = formatUTC7(task.createdTime, 'YYYY-MM-DDTHH:mm:ss');
-    if (task.updatedTime) task.updatedTime = formatUTC7(task.updatedTime, 'YYYY-MM-DDTHH:mm:ss');
-    if (task.klikJikaSudahSampai)
-      task.klikJikaSudahSampai = formatUTC7(task.klikJikaSudahSampai, 'YYYY-MM-DDTHH:mm:ss');
-    if (task.page1DoneTime)
-      task.page1DoneTime = formatUTC7(task.page1DoneTime, 'YYYY-MM-DDTHH:mm:ss');
-    if (task.page2DoneTime)
-      task.page2DoneTime = formatUTC7(task.page2DoneTime, 'YYYY-MM-DDTHH:mm:ss');
-    if (task.page3DoneTime)
-      task.page3DoneTime = formatUTC7(task.page3DoneTime, 'YYYY-MM-DDTHH:mm:ss');
+    for (const field of TASK_TIMESTAMP_FIELDS) {
+      if (task[field]) task[field] = formatUTC7(task[field], 'YYYY-MM-DDTHH:mm:ss');
+    }
 
     if (task.volumeCbm != null) task.volumeCbm = Number(Number(task.volumeCbm).toFixed(2));
     if (task.weightKg != null) task.weightKg = Number(Number(task.weightKg).toFixed(2));
@@ -520,11 +575,9 @@ async function fetchAndEnrichTasks({
     if (task.eta && typeof task.eta === 'string') task.eta = task.eta.substring(0, 5);
     if (task.etd && typeof task.etd === 'string') task.etd = task.etd.substring(0, 5);
 
-    delete task.assignedVehicle;
-    delete task.parentId;
-    delete task.subId;
-    delete task.label;
-    delete task.taskType;
+    for (const field of STRIPPED_TASK_FIELDS) {
+      delete task[field];
+    }
 
     const assigneeEmail =
       task.assignee && task.assignee.length > 0 ? task.assignee[0].toLowerCase().trim() : null;

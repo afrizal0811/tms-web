@@ -14,6 +14,70 @@ const isCoordSame = (a, b) => {
   return Math.abs(Number(a) - Number(b)) < 1e-5;
 };
 
+const parseParamDate = (str) => formatUTC7(str, 'YYYY-MM-DD') || str.split(/[ T]/)[0];
+
+const parseJsonObject = (val, fallback = null) => {
+  if (typeof val === 'string') return val ? JSON.parse(val) : fallback;
+  return val || fallback;
+};
+
+async function buildDriverHubMap(hubId, targetDate) {
+  const driverMap = new Map();
+
+  const mergeDriverHubs = (rawEmail, name, hubIds) => {
+    const email = normalizeEmail(rawEmail);
+    if (!email) return;
+    const validHubIds = hubIds.filter(Boolean);
+    const existing = driverMap.get(email);
+    if (existing) {
+      validHubIds.forEach((hId) => {
+        if (!existing.allHubIds.includes(hId)) {
+          existing.allHubIds.push(hId);
+        }
+      });
+      return;
+    }
+    driverMap.set(email, {
+      name,
+      hubId: validHubIds[0] || null,
+      allHubIds: validHubIds,
+    });
+  };
+
+  const [rawDriversList, rawDrivers] = await Promise.all([
+    prisma.driverList.findMany(),
+    prisma.driver.findMany({ include: { hubs: true } }),
+  ]);
+
+  rawDriversList.forEach((d) => {
+    mergeDriverHubs(d.email, d.name, [d.hub_id]);
+  });
+
+  rawDrivers.forEach((d) => {
+    mergeDriverHubs(d.email, d.name, d.hubs?.map((h) => h.id) || []);
+  });
+
+  if (hubId && hubId !== 'all') {
+    const hubTasks = await prisma.task.findMany({
+      where: {
+        hub_id: hubId,
+        delivery_date: targetDate,
+      },
+      select: { assignee: true },
+      distinct: ['assignee'],
+    });
+    hubTasks.forEach((t) => {
+      if (!t.assignee) return;
+      const email = normalizeEmail(t.assignee.split(',')[0].trim());
+      if (email) {
+        mergeDriverHubs(email, email, [hubId]);
+      }
+    });
+  }
+
+  return driverMap;
+}
+
 export async function GET(request) {
   try {
     const { searchParams } = new URL(request.url);
@@ -34,18 +98,13 @@ export async function GET(request) {
     } else if (dateFrom && dateTo) {
       where.date = { gte: dateFrom, lte: dateTo };
     } else if (timeFrom && timeTo) {
-      const dFrom = formatUTC7(timeFrom, 'YYYY-MM-DD') || timeFrom.split(/[ T]/)[0];
-      const dTo = formatUTC7(timeTo, 'YYYY-MM-DD') || timeTo.split(/[ T]/)[0];
-      if (dFrom === dTo) {
-        where.date = dFrom;
-      } else {
-        where.date = { gte: dFrom, lte: dTo };
-      }
+      const dFrom = parseParamDate(timeFrom);
+      const dTo = parseParamDate(timeTo);
+      where.date = dFrom === dTo ? dFrom : { gte: dFrom, lte: dTo };
     } else if (dateFrom) {
       where.date = { gte: dateFrom };
     } else if (timeFrom) {
-      const dFrom = formatUTC7(timeFrom, 'YYYY-MM-DD') || timeFrom.split(/[ T]/)[0];
-      where.date = { gte: dFrom };
+      where.date = { gte: parseParamDate(timeFrom) };
     }
 
     const [locationHistories, driverList, vehicleList] = await Promise.all([
@@ -135,8 +194,7 @@ export async function GET(request) {
         },
         durationHour: h.total_duration ? formatMinutesToHHMM(h.total_duration) : null,
         hubId: h.hub_id,
-        syncUser:
-          typeof h.sync_user === 'string' ? JSON.parse(h.sync_user) : h.sync_user || null,
+        syncUser: parseJsonObject(h.sync_user, null),
       };
     });
 
@@ -225,34 +283,7 @@ export async function POST(request) {
       rawItems = data.tasks?.data || [];
     }
 
-    let rawDriversList = await prisma.driverList.findMany();
-    const driverMap = new Map();
-    rawDriversList.forEach((d) => {
-      const email = normalizeEmail(d.email);
-      if (email) {
-        driverMap.set(email, {
-          name: d.name,
-          hubId: d.hub_id,
-          allHubIds: [d.hub_id],
-        });
-      }
-    });
-
-    if (rawDriversList.length === 0) {
-      const rawDrivers = await prisma.driver.findMany({
-        include: { hubs: true },
-      });
-      rawDrivers.forEach((d) => {
-        const email = normalizeEmail(d.email);
-        if (email && !driverMap.has(email)) {
-          driverMap.set(email, {
-            name: d.name,
-            hubId: d.hubs?.[0]?.id || null,
-            allHubIds: d.hubs?.map((h) => h.id) || [],
-          });
-        }
-      });
-    }
+    const driverMap = await buildDriverHubMap(hubId, targetDate);
 
     const currentUser = updated_by || created_by || 'System';
     const nowIso = new Date().toISOString();
@@ -312,15 +343,12 @@ export async function POST(request) {
           formatUTC7(item.startTime, 'YYYY-MM-DD') ||
           targetDate ||
           item.startTime?.split(/[ T]/)[0];
-        const startTime =
-          formatUTC7(item.startTime, 'YYYY-MM-DD HH:mm:ss') || item.startTime;
+        const startTime = formatUTC7(item.startTime, 'YYYY-MM-DD HH:mm:ss') || item.startTime;
         const finishTime = item.finish?.finishTime
           ? formatUTC7(item.finish.finishTime, 'YYYY-MM-DD HH:mm:ss')
           : null;
         const totalDuration =
-          item.finish?.totalDuration != null
-            ? Math.round(Number(item.finish.totalDuration))
-            : null;
+          item.finish?.totalDuration != null ? Math.round(Number(item.finish.totalDuration)) : null;
         const totalDistance =
           item.finish?.totalDistance != null
             ? Number(Number(item.finish.totalDistance).toFixed(2))
@@ -351,13 +379,9 @@ export async function POST(request) {
           }
         }
 
-        const resolvedHubId =
-          hubId && hubId !== 'all' ? hubId : driverInfo?.hubId || null;
+        const resolvedHubId = hubId && hubId !== 'all' ? hubId : driverInfo?.hubId || null;
 
-        const existingSync =
-          typeof existing?.sync_user === 'string'
-            ? JSON.parse(existing.sync_user)
-            : existing?.sync_user || null;
+        const existingSync = parseJsonObject(existing?.sync_user, null);
 
         const syncUser = {
           created_by: existingSync?.created_by || currentUser,

@@ -49,58 +49,79 @@ export async function GET(request) {
 export async function POST(request) {
   try {
     const body = await request.json();
-    const {
-      taskId,
-      date,
-      new_status,
-      internalExternal,
-      detailReason,
-      groupReason,
-      pic,
-      userName,
-      created_by,
-      updated_by,
-    } = body;
+    const isBatch = Array.isArray(body) || Array.isArray(body?.items);
+    const rawList = Array.isArray(body)
+      ? body
+      : Array.isArray(body?.items)
+        ? body.items
+        : [body];
 
-    const currentUser = updated_by || created_by || userName || null;
+    const taskIds = rawList.map((item) => item.taskId).filter(Boolean);
+    const existingList =
+      taskIds.length > 0
+        ? await prisma.pendingDetail.findMany({
+            where: { task_id: { in: taskIds } },
+          })
+        : [];
+    const existingMap = new Map(existingList.map((e) => [e.task_id, e]));
 
-    const existing = await prisma.pendingDetail.findUnique({
-      where: { task_id: taskId },
-    });
-
-    const updateData = {
-      internal_external: internalExternal ?? null,
-      detail_reason: detailReason ?? null,
-      group_reason: groupReason ?? null,
-      pic: pic ?? null,
-      updated_by: currentUser,
-    };
-
-    if (new_status !== undefined) {
-      updateData.new_status = new_status;
-    }
-
-    if (existing && !existing.created_by && currentUser) {
-      updateData.created_by = currentUser;
-    }
-
-    const upserted = await prisma.pendingDetail.upsert({
-      where: { task_id: taskId },
-      update: updateData,
-      create: {
-        task_id: taskId,
+    const upsertOperations = rawList.map((entry) => {
+      const {
+        taskId,
         date,
-        new_status: new_status || null,
-        internal_external: internalExternal || null,
-        detail_reason: detailReason || null,
-        group_reason: groupReason || null,
-        pic: pic || null,
-        created_by: currentUser,
+        new_status,
+        internalExternal,
+        detailReason,
+        groupReason,
+        pic,
+        userName,
+        created_by,
+        updated_by,
+      } = entry;
+
+      const currentUser = updated_by || created_by || userName || null;
+      const existing = existingMap.get(taskId);
+
+      const updateData = {
+        internal_external: internalExternal ?? null,
+        detail_reason: detailReason ?? null,
+        group_reason: groupReason ?? null,
+        pic: pic ?? null,
         updated_by: currentUser,
-      },
+      };
+
+      if (new_status !== undefined) {
+        updateData.new_status = new_status;
+      }
+
+      if (existing && !existing.created_by && currentUser) {
+        updateData.created_by = currentUser;
+      }
+
+      return prisma.pendingDetail.upsert({
+        where: { task_id: taskId },
+        update: updateData,
+        create: {
+          task_id: taskId,
+          date,
+          new_status: new_status || null,
+          internal_external: internalExternal || null,
+          detail_reason: detailReason || null,
+          group_reason: groupReason || null,
+          pic: pic || null,
+          created_by: currentUser,
+          updated_by: currentUser,
+        },
+      });
     });
+
+    const results = await prisma.$transaction(upsertOperations);
     clearPendingCheckCache();
-    return NextResponse.json({ message: 'Success', data: formatPending(upserted) }, { status: 200 });
+
+    return NextResponse.json(
+      { message: 'Success', data: isBatch ? results.map(formatPending) : formatPending(results[0]) },
+      { status: 200 }
+    );
   } catch (error) {
     console.error('Error Upsert Pending Details:', error);
     return NextResponse.json(
