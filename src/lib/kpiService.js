@@ -232,6 +232,7 @@ export async function validateKpiReadiness({ hubId, deliveryDate }) {
       if ((isOngoingPast && isStillOngoing) || !hasReason) {
         missingTasks.push({
           id: t.id,
+          hubId: t.hub_id,
           deliveryDate: t.delivery_date,
           customerOrder: t.customer_order || '',
           reason: t.reason || '',
@@ -323,9 +324,7 @@ export async function processAndStoreKpi({ hubId, deliveryDate, userName = 'syst
     return base;
   });
 
-  const taskRoutingIds = Array.from(
-    new Set(tasks.map((t) => t.routing_result_id).filter(Boolean))
-  );
+  const taskRoutingIds = Array.from(new Set(tasks.map((t) => t.routing_result_id).filter(Boolean)));
   const existingResultIds = new Set(rawResults.map((r) => r.id));
   const missingRoutingIds = taskRoutingIds.filter((id) => !existingResultIds.has(id));
 

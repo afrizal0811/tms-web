@@ -156,7 +156,7 @@ function ServiceLevelChart({ allTasks, isDarkMode }) {
             <div className="w-40 h-3 rounded-full bg-slate-100 mb-4 dark:bg-slate-600 animate-pulse" />
             <div className="w-[90%] h-[70%] rounded-2xl bg-slate-100 dark:bg-slate-600 animate-pulse" />
             <p className="mt-4 text-xs font-semibold tracking-wide uppercase">
-              {t('common.preparing_chart')}
+              {t('common.preparing')}
             </p>
           </div>
         ) : !hasData ? (

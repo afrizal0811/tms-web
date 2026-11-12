@@ -74,7 +74,7 @@ export const dictionary = {
       plan_travel_duration: 'Perkiraan  Durasi Perjalanan',
       plan_travel_time: 'Perkiraan Waktu Perjalanan',
       plan_visit: 'Perkiraan Waktu Kunjung',
-      preparing_chart: 'Menyiapkan Grafik...',
+      preparing: 'Menyiapkan...',
       quantity: 'Kuantitas',
       range_delivery: 'Rentang Tanggal Pengiriman',
       report: 'Laporan',
@@ -701,6 +701,7 @@ export const dictionary = {
           unsave_changes: 'Belum disimpan',
         },
         sync_data: {
+          canceling_sync: 'Membatalkan Sinkronisasi...',
           driver_vehicles: 'Data Sopir & Kendaraan',
           hubs: 'Data Cabang',
           roles: 'Data Peran',
@@ -709,6 +710,7 @@ export const dictionary = {
           sync_title: 'Sinkronisasi Master Data',
           subtitle: 'Penyelarasan data master tiap cabang dengan server MileApp',
           title: 'Sinkronisasi',
+          validate_kpi: 'Melakukan validasi data KPI',
         },
         button: {
           btn_sync: 'Sinkronisasi',
@@ -718,6 +720,9 @@ export const dictionary = {
           blank_driver: 'Tanpa Sopir',
           sync_subtitle:
             'Terdapat perbedaan data MileApp dan McEasy untuk data kendaraan dan sopir',
+        },
+        toast: {
+          canceled_sync: 'Sinkronisasi data dibatalkan oleh pengguna',
         },
       },
     },
@@ -838,7 +843,7 @@ export const dictionary = {
       plan_travel_duration: 'Planned Travel Duration',
       plan_travel_time: 'Planned Travel Time',
       plan_visit: 'Planned Visit Time',
-      preparing_chart: 'Preparing chart...',
+      preparing: 'Preparing...',
       quantity: 'Quantity',
       range_delivery: 'Delivery Date Range',
       report: 'Report',
@@ -1463,6 +1468,7 @@ export const dictionary = {
           default_hint: 'Has access to all menus and features.',
         },
         sync_data: {
+          canceling_sync: 'Canceling synchronization...',
           driver_vehicles: 'Driver & Vehicle Data',
           hubs: 'Branch Data',
           roles: 'Role Data',
@@ -1471,6 +1477,7 @@ export const dictionary = {
           sync_title: 'Master Data Synchronization',
           subtitle: 'Master data alignment for each branch with the MileApp server',
           title: 'Synchronize',
+          validate_kpi: 'Validating KPI data',
         },
         button: {
           btn_sync: 'Synchronize',
@@ -1480,6 +1487,9 @@ export const dictionary = {
           blank_driver: 'No Driver',
           sync_subtitle:
             'There are differences between MileApp and McEasy data for vehicles and drivers',
+        },
+        toast: {
+          canceled_sync: 'Data synchronization was canceled by the user',
         },
       },
     },

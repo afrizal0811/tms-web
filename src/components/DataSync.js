@@ -68,14 +68,19 @@ export default function DataSync({ children }) {
       });
       if (res?.status === 'MISSING_PENDING_REASONS' && res?.missingTasks?.length > 0) {
         pendingDateRef.current = dateStr;
-        setUncompletedPendingTasks(res.missingTasks);
-        const reasons = await getReasons().catch(() => []);
-        setPendingReasonsList(Array.isArray(reasons) ? reasons : []);
-        const template =
-          tRef.current?.('summary.tabs.pending_reasons.toast_uncompleted', {
-            count: res.missingTasks.length,
-          }) || `Terdapat ${res.missingTasks.length} data pending yang belum memiliki alasan!`;
-        toastWarning(template.replace('{count}', res.missingTasks.length));
+        const tasksForHub = res.missingTasks.filter(
+          (t) => !t.hubId || String(t.hubId) === String(hubId)
+        );
+        if (tasksForHub.length > 0) {
+          setUncompletedPendingTasks(tasksForHub);
+          const reasons = await getReasons().catch(() => []);
+          setPendingReasonsList(Array.isArray(reasons) ? reasons : []);
+          const template =
+            tRef.current?.('summary.tabs.pending_reasons.toast_uncompleted', {
+              count: tasksForHub.length,
+            }) || `Terdapat ${tasksForHub.length} data pending yang belum memiliki alasan!`;
+          toastWarning(template.replace('{count}', tasksForHub.length));
+        }
       }
     } catch (err) {
       console.warn('[DataSync] KPI process error:', err.message);

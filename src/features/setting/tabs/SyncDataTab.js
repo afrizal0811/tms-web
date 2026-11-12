@@ -406,7 +406,9 @@ export default function SyncDataTab({
     if (!datesToSync || datesToSync.length === 0) return;
 
     const isGlobal = mode === 'global';
-    const targetHubId = isGlobal ? 'all' : activeHubId;
+    const targetHubId = isGlobal
+      ? 'all'
+      : activeHub?._id || activeHubId || getLocalStorage().storedLocation;
     setSyncLoading(isGlobal ? 'routing-global' : 'routing-active');
     let hasError = false;
     let lastError = null;
@@ -451,15 +453,24 @@ export default function SyncDataTab({
             userName: storedUser?.name || 'system',
           });
           if (kpiRes?.status === 'MISSING_PENDING_REASONS' && kpiRes?.missingTasks?.length > 0) {
-            setPendingKpiTasks(kpiRes.missingTasks);
-            setPendingKpiTarget({ hubId: targetHubId, dates: hPlusOneDates });
-            const reasons = await getReasons().catch(() => []);
-            setKpiReasonsList(Array.isArray(reasons) ? reasons : []);
-            const template =
-              translate('summary.tabs.pending_reasons.toast_uncompleted', {
-                count: kpiRes.missingTasks.length,
-              }) || `Terdapat ${kpiRes.missingTasks.length} data pending yang perlu dilengkapi!`;
-            toastWarning(template.replace('{count}', kpiRes.missingTasks.length));
+            const tasksToShow =
+              !isGlobal && targetHubId && targetHubId !== 'all'
+                ? kpiRes.missingTasks.filter(
+                    (t) => !t.hubId || String(t.hubId) === String(targetHubId)
+                  )
+                : kpiRes.missingTasks;
+
+            if (tasksToShow.length > 0) {
+              setPendingKpiTasks(tasksToShow);
+              setPendingKpiTarget({ hubId: targetHubId, dates: hPlusOneDates });
+              const reasons = await getReasons().catch(() => []);
+              setKpiReasonsList(Array.isArray(reasons) ? reasons : []);
+              const template =
+                translate('summary.tabs.pending_reasons.toast_uncompleted', {
+                  count: tasksToShow.length,
+                }) || `Terdapat ${tasksToShow.length} data pending yang perlu dilengkapi!`;
+              toastWarning(template.replace('{count}', tasksToShow.length));
+            }
           }
         } catch (err) {
           console.warn('[SyncDataTab] KPI processing error:', err.message);
