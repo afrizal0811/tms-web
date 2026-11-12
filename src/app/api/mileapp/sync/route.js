@@ -1,11 +1,127 @@
 import { POST as syncResults } from '@/app/api/mileapp/results/route';
 import { POST as syncTasks } from '@/app/api/mileapp/tasks/route';
 import { POST as syncLocationHistories } from '@/app/api/mileapp/drivers/location-histories/route';
+import prisma from '@/lib/prisma';
 import { NextResponse } from 'next/server';
+
+const MS_PER_DAY = 1000 * 60 * 60 * 24;
+
+const ENTITY_SYNC_STEPS = [
+  {
+    key: 'results',
+    match: (entities) => entities.includes('results'),
+    handler: syncResults,
+  },
+  {
+    key: 'locationHistories',
+    match: (entities) =>
+      entities.includes('location-histories') || entities.includes('locationHistories'),
+    handler: syncLocationHistories,
+  },
+  {
+    key: 'tasks',
+    match: (entities) => entities.includes('tasks'),
+    handler: syncTasks,
+  },
+];
+
+function getDaysFromToday(dateStr) {
+  const [y, m, d] = String(dateStr).split('-').map(Number);
+  if (!y || !m || !d) return null;
+
+  const now = new Date();
+  now.setHours(0, 0, 0, 0);
+
+  const target = new Date(y, m - 1, d);
+  target.setHours(0, 0, 0, 0);
+
+  return Math.round((now.getTime() - target.getTime()) / MS_PER_DAY);
+}
+
+async function resolveSkipDecision({ deliveryDate, hubId, force }) {
+  if (force) return null;
+
+  const diffDays = getDaysFromToday(deliveryDate);
+  if (diffDays === null || diffDays <= 2) return null;
+
+  const isGlobal = !hubId || hubId === 'all';
+
+  if (isGlobal) {
+    const [activeHubs, tasks, kpiRecords] = await Promise.all([
+      prisma.hub.findMany({
+        where: { is_active: true },
+        select: { id: true },
+      }),
+      prisma.task.findMany({
+        where: { delivery_date: deliveryDate },
+        select: { hub_id: true, status: true },
+      }),
+      prisma.kpiData.findMany({
+        where: { date: deliveryDate },
+        select: { hub_id: true },
+      }),
+    ]);
+
+    const hasOngoing = tasks.some((t) => t.status === 'ONGOING');
+    if (hasOngoing) return null;
+
+    const recordedHubIds = new Set([
+      ...tasks.map((t) => t.hub_id),
+      ...kpiRecords.map((k) => k.hub_id),
+    ]);
+    const allHubsPresent =
+      activeHubs.length > 0 && activeHubs.every((h) => recordedHubIds.has(h.id));
+
+    if (!allHubsPresent) return null;
+
+    return {
+      message: `Sinkronisasi tanggal ${deliveryDate} dilewati karena seluruh cabang aktif sudah lengkap dan berstatus selesai (DONE).`,
+      hubId: 'all',
+    };
+  }
+
+  const tasks = await prisma.task.findMany({
+    where: { delivery_date: deliveryDate, hub_id: hubId },
+    select: { status: true },
+  });
+
+  const hasOngoing = tasks.some((t) => t.status === 'ONGOING');
+  if (tasks.length === 0 || hasOngoing) return null;
+
+  return {
+    message: `Sinkronisasi tanggal ${deliveryDate} dilewati karena seluruh tasks cabang ini sudah selesai (DONE).`,
+    hubId,
+  };
+}
+
+async function executeEntitySync(handler, createReq) {
+  try {
+    const res = await handler(createReq());
+    const data = await res.json();
+    return {
+      ok: res.ok,
+      result: {
+        status: res.status,
+        success: res.ok,
+        ...data,
+      },
+    };
+  } catch (err) {
+    return {
+      ok: false,
+      result: {
+        status: 500,
+        success: false,
+        error: err.message,
+      },
+    };
+  }
+}
 
 export async function GET() {
   return NextResponse.json({
-    message: 'Endpoint sinkronisasi operasional MileApp. Gunakan POST untuk melakukan sinkronisasi.',
+    message:
+      'Endpoint sinkronisasi operasional MileApp. Gunakan POST untuk melakukan sinkronisasi.',
   });
 }
 
@@ -19,6 +135,17 @@ export async function POST(request) {
         { error: 'Parameter "deliveryDate" (format YYYY-MM-DD) dibutuhkan.' },
         { status: 400 }
       );
+    }
+
+    const skipDecision = await resolveSkipDecision({ deliveryDate, hubId, force });
+    if (skipDecision) {
+      return NextResponse.json({
+        message: skipDecision.message,
+        success: true,
+        skipped: true,
+        deliveryDate,
+        hubId: skipDecision.hubId,
+      });
     }
 
     const payload = {
@@ -51,72 +178,15 @@ export async function POST(request) {
     let hasError = false;
     let successCount = 0;
 
-    if (entities.includes('results')) {
-      try {
-        const res = await syncResults(createReq());
-        const data = await res.json();
-        summary.results = {
-          status: res.status,
-          success: res.ok,
-          ...data,
-        };
-        if (res.ok) successCount++;
-        else hasError = true;
-      } catch (err) {
-        hasError = true;
-        summary.results = {
-          status: 500,
-          success: false,
-          error: err.message,
-        };
-      }
+    for (const step of ENTITY_SYNC_STEPS) {
+      if (!step.match(entities)) continue;
+      const { ok, result } = await executeEntitySync(step.handler, createReq);
+      summary[step.key] = result;
+      if (ok) successCount++;
+      else hasError = true;
     }
 
-    if (entities.includes('location-histories') || entities.includes('locationHistories')) {
-      try {
-        const res = await syncLocationHistories(createReq());
-        const data = await res.json();
-        summary.locationHistories = {
-          status: res.status,
-          success: res.ok,
-          ...data,
-        };
-        if (res.ok) successCount++;
-        else hasError = true;
-      } catch (err) {
-        hasError = true;
-        summary.locationHistories = {
-          status: 500,
-          success: false,
-          error: err.message,
-        };
-      }
-    }
-
-    if (entities.includes('tasks')) {
-      try {
-        const res = await syncTasks(createReq());
-        const data = await res.json();
-        summary.tasks = {
-          status: res.status,
-          success: res.ok,
-          ...data,
-        };
-        if (res.ok) successCount++;
-        else hasError = true;
-      } catch (err) {
-        hasError = true;
-        summary.tasks = {
-          status: 500,
-          success: false,
-          error: err.message,
-        };
-      }
-    }
-
-    const totalEntities = [summary.results, summary.locationHistories, summary.tasks].filter(
-      Boolean
-    ).length;
+    const totalEntities = Object.values(summary).filter(Boolean).length;
     const allFailed = totalEntities > 0 && successCount === 0;
 
     return NextResponse.json(
@@ -147,4 +217,3 @@ export async function POST(request) {
     );
   }
 }
-

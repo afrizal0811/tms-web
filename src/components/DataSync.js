@@ -19,7 +19,7 @@ import {
 } from '@/lib/api/mileapp';
 import { getLocalStorage } from '@/lib/localStorageHandler';
 import { toastWarning } from '@/lib/toast';
-import { formatDateUniversal, getBasePlate } from '@/lib/utils';
+import { formatDateUniversal, getBasePlate, tomorrowDate } from '@/lib/utils';
 import { useEffect, useRef, useState } from 'react';
 
 function getActiveWeekDays(baseDate = new Date()) {
@@ -160,6 +160,8 @@ export default function DataSync({ children }) {
       dayAfterTomorrow.setDate(now.getDate() + 2);
       const dayAfterTomorrowStr = formatDateUniversal(dayAfterTomorrow, 'YYYY-MM-DD');
 
+      const nextDeliveryStr = formatDateUniversal(tomorrowDate(true), 'YYYY-MM-DD');
+
       const targetHubId = storedLocation;
       const syncKey = `tms_last_sync_date_${targetHubId}`;
       const isInitialSync = localStorage.getItem(syncKey) !== todayStr;
@@ -182,7 +184,7 @@ export default function DataSync({ children }) {
         setStatus('common.task');
         if (isInitialSync) {
           await Promise.allSettled(
-            [...pastDates, todayStr].map((dStr) => sync(['tasks'], dStr, 20000))
+            [...pastDates, todayStr, nextDeliveryStr].map((dStr) => sync(['tasks'], dStr, 20000))
           );
         } else {
           await Promise.allSettled(
@@ -193,7 +195,7 @@ export default function DataSync({ children }) {
         if (isInitialSync) {
           setStatus('common.routing');
           await Promise.allSettled(
-            [...pastDates, todayStr].map((dStr) =>
+            [...pastDates, todayStr, nextDeliveryStr].map((dStr) =>
               sync(['results'], dStr, 15000).catch((err) =>
                 console.warn('[DataSync] Routing sync error:', err.message)
               )
